@@ -1,0 +1,39 @@
+{
+  "name": "gather-flow",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.18.0 <23",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "dev": "concurrently -n API,WECHAT -c green,cyan \"npm:dev:api\" \"npm:dev:mp-weixin\"",
+    "dev:api": "npm run dev -w @gatherflow/api",
+    "dev:mp-weixin": "npm run dev:mp-weixin -w @gatherflow/miniapp",
+    "dev:h5": "npm run dev:h5 -w @gatherflow/miniapp",
+    "db:migrate": "npm run db:migrate -w @gatherflow/api",
+    "db:seed": "npm run db:seed -w @gatherflow/api",
+    "typecheck": "tsc --noEmit -p tsconfig.tools.json && npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "format": "prettier --write apps packages scripts docs *.json *.ts README.md",
+    "format:check": "prettier --check apps packages scripts docs *.json *.ts README.md",
+    "demo:m1": "tsx scripts/demo-m1.ts",
+    "build:api": "npm run build -w @gatherflow/api",
+    "build:mp-weixin": "npm run build:mp-weixin -w @gatherflow/miniapp",
+    "build:h5": "npm run build:h5 -w @gatherflow/miniapp",
+    "build": "npm run build:api && npm run build:mp-weixin",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.12",
+    "concurrently": "9.2.1",
+    "prettier": "3.6.2",
+    "tsx": "4.20.6",
+    "typescript": "5.8.3",
+    "vitest": "3.2.4"
+  }
+}

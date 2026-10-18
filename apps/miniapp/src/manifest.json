@@ -1,0 +1,16 @@
+{
+  "name": "GatherFlow",
+  "appid": "",
+  "description": "一个人发起，所有人决定。朋友活动平权协作小程序。",
+  "versionName": "0.1.0",
+  "versionCode": "10",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "touristappid",
+    "setting": { "urlCheck": false, "es6": true, "minified": true },
+    "usingComponents": true
+  },
+  "h5": { "title": "GatherFlow · 相聚有商量", "router": { "mode": "hash" } },
+  "uniStatistics": { "enable": false },
+  "vueVersion": "3"
+}

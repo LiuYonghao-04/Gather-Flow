@@ -1,0 +1,31 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": { "navigationBarTitleText": "GatherFlow", "enablePullDownRefresh": true }
+    },
+    { "path": "pages/login/index", "style": { "navigationBarTitleText": "相聚有商量" } },
+    { "path": "pages/create/index", "style": { "navigationBarTitleText": "发起相聚" } },
+    {
+      "path": "pages/activity/index",
+      "style": { "navigationBarTitleText": "我们的活动", "enablePullDownRefresh": true }
+    },
+    { "path": "pages/share/index", "style": { "navigationBarTitleText": "邀请朋友" } },
+    {
+      "path": "pages/invite/index",
+      "style": { "navigationBarTitleText": "一份相聚邀请", "enablePullDownRefresh": true }
+    },
+    {
+      "path": "pages/members/index",
+      "style": { "navigationBarTitleText": "同行的朋友", "enablePullDownRefresh": true }
+    },
+    { "path": "pages/audit/index", "style": { "navigationBarTitleText": "活动足迹" } }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "GatherFlow",
+    "navigationBarBackgroundColor": "#f5f4ee",
+    "backgroundColor": "#f5f4ee",
+    "backgroundTextStyle": "dark"
+  }
+}

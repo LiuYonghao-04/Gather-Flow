@@ -1,0 +1,7 @@
+node_modules
+dist
+package-lock.json
+GatherFlow_Codex.md
+output
+.playwright-cli
+.artifacts
