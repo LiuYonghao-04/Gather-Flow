@@ -18,7 +18,11 @@ onLoad((options) => {
   if (raw) {
     try {
       const path = decodeURIComponent(raw);
-      if (/^\/pages\/(index|activity|invite|members|share|create|audit)\/index(?:\?|$)/.test(path))
+      if (
+        /^\/pages\/(index|activity|invite|members|share|create|audit|collaboration|task|proposal|proposal-edit|evidence|expenses|expense|expense-edit)\/index(?:\?|$)/.test(
+          path,
+        )
+      )
         returnTo = path;
     } catch {
       /* Keep the safe local default. */

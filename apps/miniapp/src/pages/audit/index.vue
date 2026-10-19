@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
-import type { ActivityDetail, AuditEvent } from '@gatherflow/shared';
+import {
+  formatMoney,
+  responseLabels,
+  type ActivityDetail,
+  type AuditEvent,
+  type ProposalResponse,
+} from '@gatherflow/shared';
 import { api, formatTime, requireSession, showError } from '@/services/api';
 import { useRemote } from '@/composables/useRemote';
 import GfState from '@/components/GfState.vue';
@@ -33,6 +39,27 @@ const labels: Record<string, string> = {
   JOIN_REQUESTED: '申请加入活动',
   APPLICATION_APPROVED: '同意了一位朋友加入',
   APPLICATION_REJECTED: '暂未接受一份申请',
+  TASK_CREATED: '新建了任务',
+  TASK_ASSIGNED: '认领或增加了共同负责人',
+  TASK_REVISED: '更新了任务正式内容',
+  TASK_PROGRESS: '更新了工作进度',
+  TASK_SUGGESTED: '留下了任务建议',
+  SUGGESTION_REVIEWED: '回应了任务建议',
+  HANDOVER_REQUESTED: '申请交接任务',
+  HANDOVER_ACCEPTED: '接受了任务交接',
+  HANDOVER_CANCELLED: '撤销了交接申请',
+  PROPOSAL_CREATED: '提出了新方案',
+  PROPOSAL_REVISED: '发布了新方案版本',
+  PROPOSAL_RESPONDED: '记录了方案表态',
+  PREFERENCE_UPDATED: '更新了倾向或限制',
+  PROPOSAL_COMMENTED: '参与了方案讨论',
+  EXECUTION_UPDATED: '登记了执行进展',
+  EVIDENCE_UPLOADED: '上传了私有凭证',
+  EXPENSE_CREATED: '记下了一笔费用',
+  EXPENSE_REVISED: '修改了账单版本',
+  EXPENSE_CONFIRMED: '确认了账单',
+  EXPENSE_DISPUTED: '提出了账单异议',
+  EXPENSE_DISPUTE_WITHDRAWN: '撤销了本人的账单异议',
 };
 function describe(event: AuditEvent): string {
   if (event.action === 'INVITE_CREATED')
@@ -42,6 +69,34 @@ function describe(event: AuditEvent): string {
     return `${target?.name ?? '申请人 ' + event.targetId} · 待审核 → ${event.action === 'APPLICATION_APPROVED' ? '已同意' : '未通过'}`;
   }
   if (event.action === 'MEMBER_JOINED_DIRECT') return '免审核权益已使用，该邀请后续需申请';
+  const after = event.after ?? {};
+  const before = event.before ?? {};
+  const name = (value: unknown) =>
+    data.value?.activity.members.find((m) => m.id === value)?.name ?? String(value ?? '');
+  if (event.action === 'PROPOSAL_RESPONDED')
+    return `${after.proxy ? '由房主 ' + event.actor.name + ' 代 ' + name(after.userId) + ' 操作：' : name(after.userId) + '：'}${responseLabels[after.response as ProposalResponse] ?? ''} · v${after.version}${after.reason ? ' · ' + after.reason : ''}`;
+  if (event.action.endsWith('_REVISED'))
+    return `版本 ${before.version ?? before.revision} → ${after.version ?? after.revision}，旧版确认不沿用；内容与历史可在详情中查看。`;
+  if (event.action === 'TASK_PROGRESS')
+    return after.completed ? '规划工作已完成；不代表方案已共同确认。' : '重新开始推进这项工作。';
+  if (event.action === 'TASK_ASSIGNED') return `${name(after.userId)} 加入负责人，共同推进任务。`;
+  if (event.action.startsWith('HANDOVER_'))
+    return `${name(after.fromUserId ?? before.fromUserId)} → ${name(after.toUserId)}${after.note ? ' · ' + after.note : ''}`;
+  if (event.action === 'EXECUTION_UPDATED')
+    return `方案 v${after.version} · ${after.execution === 'BOOKED' ? '已预订' : '已执行'}；保留负责人声明。`;
+  if (event.action === 'EXPENSE_CREATED')
+    return `${after.description} · ¥ ${formatMoney(Number(after.totalCents))} · ${name(after.payerId)} 实际付款`;
+  if (event.action === 'EXPENSE_CONFIRMED')
+    return `确认账单 v${after.revision}，相关成员仍可提出异议。`;
+  if (event.action === 'EXPENSE_DISPUTED')
+    return `账单 v${after.revision} · ${after.reason}，暂停计入预计结算。`;
+  if (event.action === 'EXPENSE_DISPUTE_WITHDRAWN')
+    return `仅撤销本人异议；当前账单 v${after.revision}，其他异议继续保留。`;
+  if (event.action === 'EVIDENCE_UPLOADED')
+    return `${after.caption || '预订凭证'} · ${after.version ? '方案 v' + after.version : '关联任务'} · 仅活动成员可查看。`;
+  if (after.body) return String(after.body);
+  if (after.note) return String(after.note);
+  if (after.title) return String(after.title);
   return '记录已保存，所有活动成员可查';
 }
 async function loadMore() {

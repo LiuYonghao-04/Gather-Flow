@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app';
-import { activityTypeLabels, type ActivityDetail } from '@gatherflow/shared';
+import {
+  activityTypeLabels,
+  formatMoney,
+  type ActivityDetail,
+  type Workspace,
+  type FinanceWorkspace,
+} from '@gatherflow/shared';
 import { api, go, goHome, isDemo, loginPath, requireSession } from '@/services/api';
 import { useRemote } from '@/composables/useRemote';
 import { useSessionStore } from '@/stores/session';
@@ -16,7 +22,14 @@ const {
   loading,
   error,
   reload,
-} = useRemote(() => api<ActivityDetail>(`/activities/${id.value}`));
+} = useRemote(async () => {
+  const [activity, workspace, finance] = await Promise.all([
+    api<ActivityDetail>(`/activities/${id.value}`),
+    api<Workspace>(`/activities/${id.value}/workspace`),
+    api<FinanceWorkspace>(`/activities/${id.value}/finance`),
+  ]);
+  return { ...activity, workspace, finance };
+});
 onLoad((options) => {
   id.value = options?.id ?? '';
 });
@@ -28,9 +41,6 @@ onPullDownRefresh(async () => {
   await reload();
   uni.stopPullDownRefresh();
 });
-function upcoming(name: string) {
-  uni.showToast({ title: `${name}将在下一阶段开放`, icon: 'none' });
-}
 </script>
 <template>
   <view class="page">
@@ -57,8 +67,16 @@ function upcoming(name: string) {
         ><view class="row gap"
           ><view class="calendar-icon"><GfIcon name="calendar" /></view
           ><view class="grow"
-            ><text class="summary-title">时间与地点，等大家商量</text
-            ><text class="summary-description">不必急着定下来，每个人的想法都算数。</text></view
+            ><text class="summary-title">{{
+              activity.workspace.plan.items.length
+                ? activity.workspace.plan.items.length + ' 项安排，已经一起确定'
+                : '时间与地点，等大家商量'
+            }}</text
+            ><text class="summary-description">{{
+              activity.workspace.plan.conflicts.length
+                ? activity.workspace.plan.conflicts.length + ' 处时间安排需要核对'
+                : '不必急着定下来，每个人的想法都算数。'
+            }}</text></view
           ></view
         ><view class="divider" /><view class="row between"
           ><view class="row avatar-stack"
@@ -90,20 +108,33 @@ function upcoming(name: string) {
         ><text>一起把计划填满</text><text class="muted small-text">每个人都可以参与</text></view
       >
       <view class="module-grid">
-        <button class="module" @tap="upcoming('平权协商')">
+        <button class="module available" @tap="go('/pages/collaboration/index?id=' + id)">
           <GfIcon name="chat" /><text class="module-title">一起商量</text
           ><text class="module-copy">把想法变成共同决定</text
-          ><text class="module-status">下一阶段开放</text>
+          ><text class="module-status"
+            >{{
+              activity.workspace.proposals.filter((p) => p.status !== 'CONFIRMED').length
+            }}
+            个方案协商中 ›</text
+          >
         </button>
-        <button class="module" @tap="upcoming('任务与行程')">
+        <button
+          class="module available"
+          @tap="go('/pages/collaboration/index?id=' + id + '&tab=tasks')"
+        >
           <GfIcon name="route" /><text class="module-title">分工与行程</text
           ><text class="module-copy">每个人负责一点点</text
-          ><text class="module-status">下一阶段开放</text>
+          ><text class="module-status"
+            >{{ activity.workspace.tasks.filter((t) => t.completed).length }} /
+            {{ activity.workspace.tasks.length }} 项工作已完成 ›</text
+          >
         </button>
-        <button class="module" @tap="upcoming('费用与清算')">
+        <button class="module available" @tap="go('/pages/expenses/index?id=' + id)">
           <GfIcon name="wallet" /><text class="module-title">费用与 AA</text
           ><text class="module-copy">每一笔都明明白白</text
-          ><text class="module-status">后续阶段开放</text>
+          ><text class="module-status"
+            >已确认 ¥ {{ formatMoney(activity.finance.estimate.confirmedTotalCents) }} ›</text
+          >
         </button>
         <button class="module available" @tap="go('/pages/members/index?id=' + id)">
           <GfIcon name="people" /><text class="module-title">同行的朋友</text
@@ -114,6 +145,20 @@ function upcoming(name: string) {
           ><view class="row module-status"><text>查看成员</text><GfIcon name="arrow" /></view>
         </button>
       </view>
+      <button
+        class="btn secondary space-top"
+        @tap="go('/pages/collaboration/index?id=' + id + '&tab=plan')"
+      >
+        查看共同确认的总行程 ›
+      </button>
+      <button
+        v-if="activity.finance.estimate.pendingCount || activity.finance.estimate.disputedCount"
+        class="btn outline compact space-top"
+        @tap="go('/pages/expenses/index?id=' + id)"
+      >
+        费用待处理：{{ activity.finance.estimate.pendingCount }} 笔待确认 ·
+        {{ activity.finance.estimate.disputedCount }} 笔有异议
+      </button>
       <view class="agreement"
         ><GfIcon name="leaf" /><view
           ><text class="agreement-title">我们的小约定</text

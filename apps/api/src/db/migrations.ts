@@ -1,3 +1,5 @@
+import { collaborationMigration } from './collaboration-migration';
+import { financeMigration } from './finance-migration';
 export const migrations = [
   {
     version: 1,
@@ -49,4 +51,6 @@ export const migrations = [
     CREATE INDEX audit_by_activity ON audit_logs(activity_id, created_at);
   `,
   },
+  collaborationMigration,
+  financeMigration,
 ];

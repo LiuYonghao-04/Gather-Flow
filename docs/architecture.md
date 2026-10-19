@@ -12,7 +12,9 @@
 
 `db/migrations.ts` 是增量版本迁移，`schema_migrations` 记录版本；启动和独立 migrate 命令共用相同机制。种子 `INSERT OR IGNORE`，不删除本地已有记录。使用 foreign_keys、WAL、5 秒 busy_timeout。
 
-当前实体：users、sessions、activities、activity_members、invite_tokens、join_applications、audit_logs。复合成员主键防止重复成员；活动单房主部分唯一索引；待审申请部分唯一索引；令牌哈希唯一索引。
+V1 实体：users、sessions、activities、activity_members、invite_tokens、join_applications、audit_logs。V2 增加任务/负责人/内容版本/建议/交接，以及方案/内容版本/参与者/表态/偏好/评论。V3 增加私有图片、费用/费用版本/确认/异议。旧库自动按版本顺序增量迁移，保留 M1 数据。
+
+提案正文和账单输入使用不可变版本 JSON 保存；提案表态、偏好、费用确认均带版本复合键。交接中的责任归属、账单异议独立存表，不能靠覆盖版本绕过。成员、待审申请、待交接申请、单人未撤销异议分别使用主键或唯一索引约束。
 
 直邀事务使用 `BEGIN IMMEDIATE`：读取状态与成员 → 条件更新未消费令牌 → 插入成员 → 解决其待审申请 → 写审计 → 提交。任何一步失败全部回滚。事务内没有网络或 await，跨进程由 SQLite 写锁协调。测试实际启动两个 Node 子进程、各自连接同一磁盘数据库竞争同一令牌，并重新打开数据库验证结果。
 
@@ -22,7 +24,15 @@
 
 随机 bearer 会话和邀请码只在数据库存哈希。每个会话包含服务端固定的身份模式和过期时间；wechat 模式不会接受 demo 会话。API 不记录原始请求头、邀请码、完整请求体。公开邀请预览白名单 DTO；私有数据只对已入组用户返回。CORS 仅方便 H5 调试，不作为权限边界。
 
-本阶段为单机演示，没有生产限流、真实登录提供方、异常监控、会话撤销 UI 或文件上传。不要把当前 demo 认证部署到公网。M3 凭证需要私有存储和鉴权读取，不能使用公开静态目录。
+本阶段为单机演示，没有生产限流、真实登录提供方、异常监控或会话撤销 UI。不要把当前 demo 认证部署到公网。
+
+图片采用路由专用 Multer 内存接收，文件数/体积/字段受限，进入上传中间件前检查成员与活动状态。Sharp 解码及重新编码，剥离 EXIF，不信任扩展名和客户端 MIME。异步解码结束后，在写事务中再次核对成员、负责人和方案版本，然后保存 BLOB 与审计。查询只取图片元数据；实际二进制必须经 `GET /activities/:activityId/evidence/:id/image` 的会话与成员授权，响应 `private, no-store`。没有公开文件服务和携带 token 的 URL。
+
+客户端 `uni.chooseImage → uni.uploadFile` 上传，`uni.downloadFile` 携带认证请求后再交给 `uni.previewImage`。数据库和本地测试图片都被 Git 忽略。SQLite 文件不加密，生产文件存储及密钥管理仍需后续部署设计。
+
+M2/M3 所有写操作使用立即事务：权限、当前版本/修订号、业务状态与审计在同一锁内更新。客户端提交 expectedVersion / expectedRevision，过期草稿返回 409；不采用最后写入覆盖。业务服务不在数据库事务中 await。
+
+`CollaborationService` 计算方案共识与计划，`EvidenceService` 管理鉴权图片，`ExpenseService` 计算账单状态和预估；共用 ActivityService 授权/审计。`packages/shared` 提供严格 DTO、Zod 和整数分算法。费用修改不移除未撤销异议，估算只能看到当前状态为 CONFIRMED 的账单。
 
 ## 微信端与 H5
 
@@ -38,4 +48,4 @@
 
 ## 后续扩展
 
-M2 将引入带版本号的提案、响应/偏好、任务负责人/建议/交接及按日期计划聚合。M3 引入私有凭证、费用版本、分摊、确认、争议及整数分算法。M4 引入冻结快照与收款确认。实体通过 activity_id 关联，不能复用当前成员关系充当方案参与或费用分摊集合。
+M4 待引入冻结快照、仅收款方确认和活动结束财务校验。M3 的 Estimate 只供预览，readyForSettlement 表示当前无待确认/异议，不表示已结清，也没有据此结束活动的接口。M5 待做真实微信开发者工具/真机验收、生产身份接入与性能打磨。

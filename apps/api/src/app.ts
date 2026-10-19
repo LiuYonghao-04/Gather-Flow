@@ -16,6 +16,8 @@ import { authenticate, demoLogin } from './auth';
 import { HttpError, ensure } from './errors';
 import { ActivityService } from './services/activities';
 import { InviteService } from './services/invites';
+import { collaborationRoutes } from './collaboration-routes';
+import { MulterError } from 'multer';
 
 export function createApp(db: Db, settings: Pick<Settings, 'mode' | 'corsOrigin'>) {
   const app = express();
@@ -23,10 +25,15 @@ export function createApp(db: Db, settings: Pick<Settings, 'mode' | 'corsOrigin'
   const invites = new InviteService(db);
   app.disable('x-powered-by');
   app.use(helmet());
-  app.use(cors({ origin: settings.corsOrigin.split(',').map((origin) => origin.trim()) }));
+  app.use(
+    cors({
+      origin: settings.corsOrigin.split(',').map((origin) => origin.trim()),
+      exposedHeaders: ['Content-Disposition'],
+    }),
+  );
   app.use(express.json({ limit: '16kb' }));
   app.get('/health', (_req, res) =>
-    res.json({ status: 'ok', mode: settings.mode, milestone: 'M1' }),
+    res.json({ status: 'ok', mode: settings.mode, milestone: 'M3' }),
   );
   app.get('/auth/demo-users', (_req, res) => {
     ensure(settings.mode === 'demo', 404, 'DEMO_DISABLED', '演示入口未启用');
@@ -120,11 +127,22 @@ export function createApp(db: Db, settings: Pick<Settings, 'mode' | 'corsOrigin'
     );
     res.json({ ok: true });
   });
+  app.use('/activities/:activityId', collaborationRoutes(db));
   app.use((_req, _res, next) => next(new HttpError(404, 'NOT_FOUND', '接口不存在')));
   const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _next) => {
     if (error instanceof ZodError) {
       res.status(400).json({
         error: { code: 'VALIDATION_ERROR', message: error.issues[0]?.message ?? '输入内容有误' },
+      });
+    } else if (error instanceof MulterError) {
+      res.status(error.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({
+        error: {
+          code: error.code,
+          message:
+            error.code === 'LIMIT_FILE_SIZE'
+              ? '单张图片不能超过 5 MB'
+              : '请每次上传一张图片，检查附件与说明',
+        },
       });
     } else if (error instanceof HttpError) {
       res.status(error.status).json({ error: { code: error.code, message: error.message } });

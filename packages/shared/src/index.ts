@@ -90,7 +90,8 @@ export interface ApiErrorBody {
   error: { code: string; message: string };
 }
 
-// Contracts for later milestones; these do not indicate implemented modules.
+export * from './collaboration';
+export * from './finance';
 export type ProposalResponse = 'CONFIRM' | 'OBJECTION' | 'OPT_OUT';
 export type TaskProgress = 'UNCLAIMED' | 'IN_PROGRESS' | 'HANDOVER_PENDING' | 'COMPLETED';
 export type ExpenseStatus = 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'DISPUTED' | 'PERSONAL_ONLY';

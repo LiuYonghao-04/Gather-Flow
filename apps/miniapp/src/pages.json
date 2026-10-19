@@ -19,7 +19,30 @@
       "path": "pages/members/index",
       "style": { "navigationBarTitleText": "同行的朋友", "enablePullDownRefresh": true }
     },
-    { "path": "pages/audit/index", "style": { "navigationBarTitleText": "活动足迹" } }
+    { "path": "pages/audit/index", "style": { "navigationBarTitleText": "活动足迹" } },
+    {
+      "path": "pages/collaboration/index",
+      "style": { "navigationBarTitleText": "一起安排", "enablePullDownRefresh": true }
+    },
+    {
+      "path": "pages/task/index",
+      "style": { "navigationBarTitleText": "任务分工", "enablePullDownRefresh": true }
+    },
+    {
+      "path": "pages/proposal/index",
+      "style": { "navigationBarTitleText": "一起商量", "enablePullDownRefresh": true }
+    },
+    { "path": "pages/proposal-edit/index", "style": { "navigationBarTitleText": "完善方案" } },
+    { "path": "pages/evidence/index", "style": { "navigationBarTitleText": "凭证与记账" } },
+    {
+      "path": "pages/expenses/index",
+      "style": { "navigationBarTitleText": "费用与 AA", "enablePullDownRefresh": true }
+    },
+    {
+      "path": "pages/expense/index",
+      "style": { "navigationBarTitleText": "账单详情", "enablePullDownRefresh": true }
+    },
+    { "path": "pages/expense-edit/index", "style": { "navigationBarTitleText": "记一笔费用" } }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",

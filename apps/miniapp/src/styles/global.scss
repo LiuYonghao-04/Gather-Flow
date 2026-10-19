@@ -262,3 +262,84 @@ button:active {
   background: #fffef8;
   box-shadow: 0 2rpx 6rpx #35493409;
 }
+.block {
+  display: block;
+}
+.preline {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.space-top {
+  margin-top: 28rpx;
+}
+.flow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22rpx;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.chip {
+  margin: 0;
+  padding: 15rpx 22rpx;
+  border-radius: 14rpx;
+  font-size: 25rpx;
+  line-height: 1.5;
+  background: #e9ece2;
+  color: #64725b;
+}
+.chip.selected {
+  background: #294f40;
+  color: #fffef7;
+}
+.picker-value {
+  display: flex;
+  align-items: center;
+}
+.amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.actions {
+  display: flex;
+  gap: 14rpx;
+  flex-wrap: wrap;
+  margin-top: 24rpx;
+}
+.actions > .btn {
+  flex: 1;
+}
+.tag.danger {
+  background: #f4e5dd;
+  color: #9d5946;
+}
+.section-copy {
+  display: block;
+  font-size: 25rpx;
+  color: #7b8775;
+  margin: 12rpx 0 22rpx;
+}
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #1c30285c;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+}
+.sheet {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 36rpx 36rpx calc(34rpx + env(safe-area-inset-bottom));
+  background: #f5f4ee;
+  border-radius: 32rpx 32rpx 0 0;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.sheet .btn {
+  margin-top: 20rpx;
+}

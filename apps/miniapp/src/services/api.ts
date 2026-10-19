@@ -1,7 +1,10 @@
 import type { ApiErrorBody, Session } from '@gatherflow/shared';
 
 export const isDemo = (import.meta.env.VITE_APP_MODE ?? 'demo') === 'demo';
-const baseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:3001').replace(/\/$/, '');
+export const baseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:3001').replace(
+  /\/$/,
+  '',
+);
 const sessionKey = 'gatherflow.session';
 
 export function storedSession(): Session | null {
@@ -68,8 +71,13 @@ export function api<T>(path: string, method: 'GET' | 'POST' = 'GET', data?: obje
     });
   });
 }
-export const errorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : '操作未完成，请重试';
+export function errorMessage(error: unknown): string {
+  if (error && typeof error === 'object' && 'issues' in error && Array.isArray(error.issues)) {
+    const issue = error.issues[0] as { message?: string } | undefined;
+    return issue?.message ?? '请检查填写的内容';
+  }
+  return error instanceof Error ? error.message : '操作未完成，请重试';
+}
 export function showError(error: unknown): void {
   uni.showToast({ title: errorMessage(error), icon: 'none', duration: 2500 });
 }
@@ -90,4 +98,8 @@ export function requireSession(returnTo: string): boolean {
 export function formatTime(value: string): string {
   const date = new Date(value);
   return `${date.getMonth() + 1}月${date.getDate()}日 ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+// uni-app switch emits a detail payload on both WeChat and H5; Vue's DOM typing calls it Event.
+export function switchChecked(event: unknown): boolean {
+  return (event as { detail: { value: boolean } }).detail.value;
 }
