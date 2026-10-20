@@ -24,6 +24,9 @@
     "demo:m1": "tsx scripts/demo-m1.ts",
     "demo:m23": "tsx scripts/demo-m23.ts",
     "demo:m4": "npm run demo:m23 && tsx scripts/demo-m4.ts",
+    "demo:m5": "npm run demo:m4",
+    "benchmark": "tsx scripts/benchmark.ts",
+    "wechat:capture": "tsx scripts/wechat-capture.ts",
     "build:api": "npm run build -w @gatherflow/api",
     "build:mp-weixin": "npm run build:mp-weixin -w @gatherflow/miniapp",
     "build:h5": "npm run build:h5 -w @gatherflow/miniapp",
@@ -33,6 +36,7 @@
   "devDependencies": {
     "@types/node": "22.18.12",
     "concurrently": "9.2.1",
+    "miniprogram-automator": "0.13.0",
     "prettier": "3.6.2",
     "tsx": "4.20.6",
     "typescript": "5.8.3",

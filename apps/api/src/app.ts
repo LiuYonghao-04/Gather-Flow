@@ -34,7 +34,7 @@ export function createApp(db: Db, settings: Pick<Settings, 'mode' | 'corsOrigin'
   );
   app.use(express.json({ limit: '16kb' }));
   app.get('/health', (_req, res) =>
-    res.json({ status: 'ok', mode: settings.mode, milestone: 'M4' }),
+    res.json({ status: 'ok', mode: settings.mode, milestone: 'M5' }),
   );
   app.get('/auth/demo-users', (_req, res) => {
     ensure(settings.mode === 'demo', 404, 'DEMO_DISABLED', '演示入口未启用');

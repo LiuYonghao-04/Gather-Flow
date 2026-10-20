@@ -1,5 +1,5 @@
 import type { Evidence, ApiErrorBody } from '@gatherflow/shared';
-import { baseUrl, storedSession, ApiError, persistSession } from './api';
+import { baseUrl, storedSession, ApiError, expireSession } from './api';
 
 export function choosePhoto(): Promise<string | null> {
   return new Promise((resolve, reject) =>
@@ -20,18 +20,18 @@ export function uploadPhoto(
   filePath: string,
   formData: Record<string, string>,
 ): Promise<Evidence> {
+  const token = storedSession()?.token;
   return new Promise((resolve, reject) =>
     uni.uploadFile({
       url: `${baseUrl}/activities/${activityId}/evidence`,
       filePath,
       name: 'image',
       formData,
-      header: { Authorization: `Bearer ${storedSession()?.token ?? ''}` },
+      header: { Authorization: `Bearer ${token ?? ''}` },
       timeout: 60000,
       success: (response) => {
         if (response.statusCode === 401) {
-          persistSession(null);
-          uni.$emit('session-expired');
+          expireSession(token);
         }
         try {
           const body: unknown = JSON.parse(response.data);
@@ -54,15 +54,15 @@ export function uploadPhoto(
   );
 }
 export async function previewEvidence(activityId: string, evidenceId: string): Promise<void> {
+  const token = storedSession()?.token;
   const path = await new Promise<string>((resolve, reject) =>
     uni.downloadFile({
       url: `${baseUrl}/activities/${activityId}/evidence/${evidenceId}/image`,
-      header: { Authorization: `Bearer ${storedSession()?.token ?? ''}` },
+      header: { Authorization: `Bearer ${token ?? ''}` },
       timeout: 30000,
       success: (r) => {
         if (r.statusCode === 401) {
-          persistSession(null);
-          uni.$emit('session-expired');
+          expireSession(token);
         }
         if (r.statusCode === 200) resolve(r.tempFilePath);
         else reject(new Error('无法查看凭证，请确认当前身份仍是活动成员'));

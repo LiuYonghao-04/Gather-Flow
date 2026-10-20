@@ -21,7 +21,10 @@ export function storedSession(): Session | null {
   if (
     !session.user?.id ||
     typeof session.token !== 'string' ||
-    Date.parse(session.expiresAt) <= Date.now()
+    !/^[a-f0-9]{64}$/.test(session.token) ||
+    !Number.isFinite(Date.parse(session.expiresAt)) ||
+    Date.parse(session.expiresAt) <= Date.now() ||
+    session.mode !== (isDemo ? 'demo' : 'wechat')
   )
     return null;
   return session;
@@ -29,6 +32,28 @@ export function storedSession(): Session | null {
 export function persistSession(value: Session | null): void {
   if (value) uni.setStorageSync(sessionKey, value);
   else uni.removeStorageSync(sessionKey);
+}
+export function expireSession(requestToken: string | undefined): void {
+  // A delayed response from an old identity must not erase a new login.
+  const cached: unknown = uni.getStorageSync(sessionKey);
+  const cachedToken =
+    cached && typeof cached === 'object' && 'token' in cached ? cached.token : undefined;
+  if (requestToken ? cachedToken !== requestToken : storedSession() !== null) return;
+  persistSession(null);
+  uni.$emit('session-expired');
+}
+export function returnToLogin(): void {
+  const pages = getCurrentPages();
+  const page = pages[pages.length - 1] as
+    | { route?: string; options?: Record<string, unknown> }
+    | undefined;
+  if (page?.route === 'pages/login/index') return;
+  const route = page?.route?.startsWith('pages/') ? '/' + page.route : '/pages/index/index';
+  const query = Object.entries(page?.options ?? {})
+    .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('&');
+  uni.reLaunch({ url: loginPath(route + (query ? '?' + query : '')) });
 }
 export class ApiError extends Error {
   constructor(
@@ -56,8 +81,7 @@ export function api<T>(path: string, method: 'GET' | 'POST' = 'GET', data?: obje
           return;
         }
         if (response.statusCode === 401) {
-          persistSession(null);
-          uni.$emit('session-expired');
+          expireSession(session?.token);
         }
         const body = response.data as Partial<ApiErrorBody>;
         reject(

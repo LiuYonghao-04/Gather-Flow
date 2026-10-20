@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "types": ["node"] },
+  "compilerOptions": { "types": ["node", "multer"] },
   "include": ["scripts/**/*.ts", "vitest.config.ts", "apps/api/tsup.config.ts"]
 }

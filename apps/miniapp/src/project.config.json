@@ -1,0 +1,15 @@
+{
+  "description": "GatherFlow 本地微信演示。导入编译输出目录，不是源码目录。",
+  "projectname": "GatherFlow",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "./",
+  "simulatorType": "wechat",
+  "libVersion": "3.17.4",
+  "appid": "wxf6db22d44eb01228",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": false,
+    "minified": true
+  }
+}

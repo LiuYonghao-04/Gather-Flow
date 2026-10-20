@@ -12,6 +12,8 @@ import type {
   ExpenseInput,
   Workspace,
   FinanceWorkspace,
+  JoinResult,
+  JoinApplication,
 } from '@gatherflow/shared';
 
 const baseUrl = process.env.API_BASE_URL ?? 'http://127.0.0.1:3001';
@@ -39,10 +41,32 @@ async function main() {
     description: '五位朋友一起商量、分工、留存虚构凭证，再把每一笔钱记清楚。所有内容均为演示数据。',
   });
   const root = `/activities/${activity.id}`;
-  for (const id of ['B', 'C', 'D', 'E']) {
-    const card = await call<Invite>(root + '/invites', 'A', { kind: 'DIRECT' });
-    await call(`/invites/${card.token}/join`, id, {});
-  }
+  const direct = await call<Invite>(root + '/invites', 'A', { kind: 'DIRECT' });
+  assert.equal(
+    (await call<JoinResult>(`/invites/${direct.token}/join`, 'B', {})).outcome,
+    'JOINED',
+  );
+  assert.equal(
+    (await call<JoinResult>(`/invites/${direct.token}/join`, 'C', {})).outcome,
+    'APPROVAL_REQUIRED',
+  );
+  await call(`/invites/${direct.token}/applications`, 'C', { message: '一起出发' });
+  const memberInvite = await call<Invite>(root + '/invites', 'B', { kind: 'APPROVAL' });
+  assert.equal(
+    (await call<JoinResult>(`/invites/${memberInvite.token}/join`, 'D', {})).outcome,
+    'APPROVAL_REQUIRED',
+  );
+  await call(`/invites/${memberInvite.token}/applications`, 'D', { message: '我也参加' });
+  const applications = await call<JoinApplication[]>(root + '/applications', 'A');
+  assert.equal(applications.length, 2);
+  for (const application of applications)
+    await call(`${root}/applications/${application.id}/review`, 'A', { decision: 'APPROVED' });
+  const lastInvite = await call<Invite>(root + '/invites', 'A', { kind: 'DIRECT' });
+  assert.equal(
+    (await call<JoinResult>(`/invites/${lastInvite.token}/join`, 'E', {})).outcome,
+    'JOINED',
+  );
+  console.log('PASS 邀请：首位直入、复用需审批、普通成员邀请需审批，五个真实会话完成入组。');
   const date = await call<Proposal>(root + '/proposals', 'A', {
     content: {
       title: '周六出发，在山里住两晚',

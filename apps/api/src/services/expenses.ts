@@ -14,50 +14,98 @@ import { ensure } from '../errors';
 
 export class ExpenseService extends EvidenceService {
   expense(activityId: string, id: string, actor: string): Expense {
+    const expense = this.loadExpenses(activityId, actor, id)[0];
+    ensure(expense, 404, 'EXPENSE_NOT_FOUND', '账单不存在');
+    return expense;
+  }
+  private loadExpenses(activityId: string, actor: string, expenseId?: string): Expense[] {
+    return this.db.transaction(() => this.readExpenses(activityId, actor, expenseId))();
+  }
+  private readExpenses(activityId: string, actor: string, expenseId?: string): Expense[] {
     this.requireMember(activityId, actor);
-    const row = this.db
+    const condition = 'e.activity_id = ?' + (expenseId ? ' AND e.id = ?' : '');
+    const params = expenseId ? [activityId, expenseId] : [activityId];
+    const rows = this.db
       .prepare(
-        'SELECT id,activity_id AS activityId,recorder_id AS recorderId,current_revision AS revision,created_at AS createdAt FROM expenses WHERE id = ? AND activity_id = ?',
+        'SELECT e.id,e.activity_id AS activityId,e.recorder_id AS recorderId,e.current_revision AS revision,e.created_at AS createdAt FROM expenses e WHERE ' +
+          condition +
+          ' ORDER BY e.rowid DESC',
       )
-      .get(id, activityId) as
-      | Pick<Expense, 'id' | 'activityId' | 'recorderId' | 'revision' | 'createdAt'>
-      | undefined;
-    ensure(row, 404, 'EXPENSE_NOT_FOUND', '账单不存在');
-    const revisions = (
+      .all(...params) as Pick<
+      Expense,
+      'id' | 'activityId' | 'recorderId' | 'revision' | 'createdAt'
+    >[];
+    if (!rows.length) return [];
+    const group = <T extends { expenseId: string }>(items: T[]) => {
+      const result = new Map<string, T[]>();
+      for (const item of items) {
+        const values = result.get(item.expenseId) ?? [];
+        values.push(item);
+        result.set(item.expenseId, values);
+      }
+      return result;
+    };
+    const revisionRows = this.db
+      .prepare(
+        'SELECT r.expense_id AS expenseId,r.revision,r.input_json AS inputJson,r.actor_id AS actorId,r.created_at AS createdAt FROM expense_revisions r JOIN expenses e ON e.id = r.expense_id WHERE ' +
+          condition +
+          ' ORDER BY r.revision DESC',
+      )
+      .all(...params) as (Omit<ExpenseRevision, 'input'> & {
+      expenseId: string;
+      inputJson: string;
+    })[];
+    const revisionsById = group(
+      revisionRows.map(({ inputJson, ...r }) => ({
+        ...r,
+        input: JSON.parse(inputJson) as ExpenseInput,
+      })),
+    );
+    const confirmationsById = group(
       this.db
         .prepare(
-          'SELECT revision,input_json AS inputJson,actor_id AS actorId,created_at AS createdAt FROM expense_revisions WHERE expense_id = ? ORDER BY revision DESC',
+          'SELECT c.expense_id AS expenseId,c.user_id AS userId,c.revision,c.created_at AS createdAt FROM expense_confirmations c JOIN expenses e ON e.id = c.expense_id WHERE ' +
+            condition +
+            ' ORDER BY c.revision,c.user_id',
         )
-        .all(id) as (Omit<ExpenseRevision, 'input'> & { inputJson: string })[]
-    ).map(({ inputJson, ...v }) => ({ ...v, input: JSON.parse(inputJson) as ExpenseInput }));
-    const input = revisions[0]!.input;
-    const confirmations = this.db
-      .prepare(
-        'SELECT user_id AS userId, revision, created_at AS createdAt FROM expense_confirmations WHERE expense_id = ? ORDER BY revision,user_id',
-      )
-      .all(id) as Expense['confirmations'];
-    const disputes = this.db
-      .prepare(
-        'SELECT id,user_id AS userId,reason,revision,created_at AS createdAt,withdrawn_at AS withdrawnAt FROM expense_disputes WHERE expense_id = ? ORDER BY rowid DESC',
-      )
-      .all(id) as Expense['disputes'];
-    const personal = input.shares.length === 1 && input.shares[0]!.userId === input.payerId;
-    const status: Expense['status'] = disputes.some((x) => !x.withdrawnAt)
-      ? 'DISPUTED'
-      : personal
-        ? 'PERSONAL_ONLY'
-        : confirmations.some(
-              (x) =>
-                x.revision === row.revision &&
-                x.userId !== row.recorderId &&
-                input.shares.some((s) => s.userId === x.userId),
-            )
-          ? 'CONFIRMED'
-          : 'PENDING_CONFIRMATION';
-    const evidence = this.listEvidence(activityId, actor).filter((x) =>
-      input.evidenceIds.includes(x.id),
+        .all(...params) as (Expense['confirmations'][number] & { expenseId: string })[],
     );
-    return { ...row, ...input, status, revisions, confirmations, disputes, evidence };
+    const disputesById = group(
+      this.db
+        .prepare(
+          'SELECT d.expense_id AS expenseId,d.id,d.user_id AS userId,d.reason,d.revision,d.created_at AS createdAt,d.withdrawn_at AS withdrawnAt FROM expense_disputes d JOIN expenses e ON e.id = d.expense_id WHERE ' +
+            condition +
+            ' ORDER BY d.rowid DESC',
+        )
+        .all(...params) as (Expense['disputes'][number] & { expenseId: string })[],
+    );
+    const evidenceById = new Map(this.listEvidence(activityId, actor).map((e) => [e.id, e]));
+    return rows.map((row) => {
+      const revisions = (revisionsById.get(row.id) ?? []).map(({ expenseId: _id, ...r }) => r);
+      const input = revisions[0]!.input;
+      const confirmations = (confirmationsById.get(row.id) ?? []).map(
+        ({ expenseId: _id, ...c }) => c,
+      );
+      const disputes = (disputesById.get(row.id) ?? []).map(({ expenseId: _id, ...d }) => d);
+      const personal = input.shares.length === 1 && input.shares[0]!.userId === input.payerId;
+      const status: Expense['status'] = disputes.some((x) => !x.withdrawnAt)
+        ? 'DISPUTED'
+        : personal
+          ? 'PERSONAL_ONLY'
+          : confirmations.some(
+                (x) =>
+                  x.revision === row.revision &&
+                  x.userId !== row.recorderId &&
+                  input.shares.some((s) => s.userId === x.userId),
+              )
+            ? 'CONFIRMED'
+            : 'PENDING_CONFIRMATION';
+      const evidence = input.evidenceIds.flatMap((id) => {
+        const e = evidenceById.get(id);
+        return e ? [e] : [];
+      });
+      return { ...row, ...input, status, revisions, confirmations, disputes, evidence };
+    });
   }
   validateInput(activityId: string, actor: string, input: ExpenseInput): ExpenseInput {
     const parsed = expenseInputSchema.parse(input);
@@ -235,12 +283,12 @@ export class ExpenseService extends EvidenceService {
       .immediate();
   }
   finance(activityId: string, actor: string): FinanceWorkspace {
-    const members = this.detail(activityId, actor).members;
-    const expenses = (
-      this.db
-        .prepare('SELECT id FROM expenses WHERE activity_id = ? ORDER BY rowid DESC')
-        .all(activityId) as { id: string }[]
-    ).map((x) => this.expense(activityId, x.id, actor));
+    return this.db.transaction(() => this.readFinance(activityId, actor))();
+  }
+  private readFinance(activityId: string, actor: string): FinanceWorkspace {
+    const activity = this.detail(activityId, actor);
+    const members = activity.members;
+    const expenses = this.loadExpenses(activityId, actor);
     const balances = netBalances(
       members.map((x) => x.id),
       expenses,
@@ -250,7 +298,7 @@ export class ExpenseService extends EvidenceService {
     return {
       members,
       frozen: this.financialFrozen(activityId),
-      status: this.detail(activityId, actor).status,
+      status: activity.status,
       expenses,
       estimate: {
         balances,

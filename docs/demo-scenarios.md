@@ -4,7 +4,7 @@
 
 运行 `npm run dev`。在微信开发者工具导入 `apps/miniapp/dist/dev/mp-weixin`；也可同时运行 `npm run dev:h5`，在 `http://localhost:5173` 辅助演示。首次登录有 A/B/C/D/E 五位虚构朋友。
 
-M1 邀请流程与 M2/M3 协作财务流程均可演示。最终清算与活动结束属于尚未实现的 M4。
+邀请、协作财务、最终清算与活动归档均可演示。M5 提供 `npm run demo:m5` 统一入口和[面试讲解顺序](interview-demo.md)。
 
 ## 手动路径（约 3–5 分钟）
 
