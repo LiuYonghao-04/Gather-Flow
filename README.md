@@ -2,7 +2,7 @@
 
 **一个人发起，所有人决定。** 面向朋友聚会与短途旅行的微信小程序。技术栈为 uni-app、Vue 3、TypeScript、Vite、Pinia，以及 Express + SQLite。
 
-当前实现到 **M3**：在 M0/M1 活动与邀请基础上，完成 **M2 协商、多人任务与总行程**，以及 **M3 私有凭证、版本化账单、分摊确认/异议与预计净额**。共 16 个小程序页面，使用真实 API 和 SQLite 持久化。**M4 最终清算冻结、收款确认、活动结束尚未实现，当前仍不是完整 MVP。** 详见 [规则对照](docs/implementation-matrix.md)。
+当前实现到 **M4**：活动邀请、协商任务、私有凭证、AA 账单、最终清算冻结、仅收款人确认到账、房主结束与只读归档。共 18 个小程序页面，使用真实 API 和 SQLite 持久化，五人本地演示贯通全过程。**微信开发者工具/真机验收与真实微信登录仍未完成。** 详见 [规则对照](docs/implementation-matrix.md)。
 
 ## 快速启动
 
@@ -46,28 +46,30 @@ API 启动后运行：
 ```powershell
 npm run demo:m1
 npm run demo:m23
+npm run demo:m4
 ```
 
-两个脚本各自新建演示活动，使用五个独立会话调用真实 HTTP API。`demo:m1` 演示邀请审核；`demo:m23` 演示协商、交接、三日行程、虚构凭证、800 元部分成员平摊、48 元自定义分摊及异议撤销，并输出活动链接。重复运行只新增活动，不删除或重置已有数据。M2/M3 脚本在被 Git 忽略的 `output/` 保存活动 ID 和纯色测试图片，便于页面联调。手动流程见 [演示指南](docs/demo-scenarios.md)。
+脚本各自新建演示活动，使用五个独立会话调用真实 HTTP API。`demo:m1` 演示邀请审核；`demo:m23` 演示协商、交接、行程、虚构凭证和 AA；`demo:m4` 先执行 M2/M3 场景，再处理最后一笔待确认账单，完成冻结、重开、再次冻结、收款确认与结束归档。重复运行只新增活动，不重置已有数据。演示 ID 和纯色测试图片保存在被 Git 忽略的 `output/`。手动流程见 [演示指南](docs/demo-scenarios.md)。
 
 ## 常用命令
 
-| 命令                               | 用途                              |
-| ---------------------------------- | --------------------------------- |
-| `npm run dev`                      | API + 微信开发编译                |
-| `npm run dev:api`                  | 单独运行 API                      |
-| `npm run dev:mp-weixin`            | 微信开发编译，持续监听            |
-| `npm run dev:h5`                   | H5 辅助预览                       |
-| `npm run db:migrate`               | 应用增量建表迁移                  |
-| `npm run db:seed`                  | 幂等准备五个账号与起始活动        |
-| `npm run typecheck`                | 全仓库 strict TypeScript 检查     |
-| `npm test`                         | API 权限/业务测试及跨进程并发测试 |
-| `npm run demo:m1`                  | 对运行中的 API 执行五人流程       |
-| `npm run demo:m23`                 | 五人协商、任务、凭证与 AA 演示    |
-| `npm run build`                    | API 打包 + 微信正式构建           |
-| `npm run build:h5`                 | H5 辅助正式构建                   |
-| `npm run check`                    | 类型检查 + 测试 + 主目标构建      |
-| `npm run start -w @gatherflow/api` | 运行已构建的 API                  |
+| 命令                               | 用途                               |
+| ---------------------------------- | ---------------------------------- |
+| `npm run dev`                      | API + 微信开发编译                 |
+| `npm run dev:api`                  | 单独运行 API                       |
+| `npm run dev:mp-weixin`            | 微信开发编译，持续监听             |
+| `npm run dev:h5`                   | H5 辅助预览                        |
+| `npm run db:migrate`               | 应用增量建表迁移                   |
+| `npm run db:seed`                  | 幂等准备五个账号与起始活动         |
+| `npm run typecheck`                | 全仓库 strict TypeScript 检查      |
+| `npm test`                         | API 权限/业务测试及跨进程并发测试  |
+| `npm run demo:m1`                  | 对运行中的 API 执行五人流程        |
+| `npm run demo:m23`                 | 五人协商、任务、凭证与 AA 演示     |
+| `npm run demo:m4`                  | 五人全过程，直至最终清算与只读归档 |
+| `npm run build`                    | API 打包 + 微信正式构建            |
+| `npm run build:h5`                 | H5 辅助正式构建                    |
+| `npm run check`                    | 类型检查 + 测试 + 主目标构建       |
+| `npm run start -w @gatherflow/api` | 运行已构建的 API                   |
 
 微信正式产物：`apps/miniapp/dist/build/mp-weixin`。API 产物：`apps/api/dist/server.js`。
 
@@ -80,7 +82,7 @@ npm run demo:m23
 - `POST /auth/wechat-login` 是明确返回 `501 WECHAT_NOT_CONFIGURED` 的接入边界；没有假装已完成真实微信身份验证。
 - 会话有效期 24 小时，会话令牌与邀请码均为 32 字节随机值；数据库只存哈希。
 - 私有图片由任务负责人上传，服务端解码并移除 EXIF 后存入 SQLite BLOB；读取必须经过成员鉴权。没有公开文件目录或真实订单样本。单张最大 5 MB，仅支持单帧 JPG/PNG/WebP。
-- 方案表态绑定版本、账单确认绑定修订号；改动不会沿用旧确认。活动中只显示预计净额，不自动冻结或关闭活动。
+- 方案表态绑定版本、账单确认绑定修订号。房主明确冻结最终清算后锁定财务输入；仅最终收款人确认整笔到账，全部结清后房主明确结束。无人确认到账可重开；已有到账不可自动回滚。
 - 所有服务默认只监听本机；本项目当前为开发演示，不是生产部署方案。
 
 ## 目录
@@ -100,12 +102,12 @@ apps/
     src/
       components/          # 图标、头像、导航、加载/失败/空状态
       composables/         # 远端加载状态与身份切换隔离
-      pages/               # 16 页：基础活动 + 协商/任务/行程/凭证/账单
+      pages/               # 18 页：基础活动 + 协商/任务/行程/凭证/账单/清算/归档
       services/            # uni.request、鉴权上传/下载/预览与导航
       stores/              # Pinia 会话状态
       styles/              # 移动端设计基础
 packages/shared/src/       # DTO、Zod、整数分/尾差/净额配对算法
-scripts/                   # demo-m1.ts 与 demo-m23.ts，真实 HTTP 演示
+scripts/                   # M1、M2/M3、M4 真实 HTTP 演示
 docs/                      # 需求索引、假设、架构、验收与后续计划
 GatherFlow_Codex.md         # 用户原始需求（保留原文）
 ```
@@ -114,4 +116,4 @@ GatherFlow_Codex.md         # 用户原始需求（保留原文）
 
 基于 DCloud 官方 `uni-preset-vue#vite-ts`，来源提交 `6fb81ac3c5736b8b0a83e667b3ed90223d458dd8`。保留官方匹配的 DCloud `3.0.0-5020420260813003` / Vite `5.2.8` 组合，锁定依赖，没有用 `--force` 或 `--legacy-peer-deps` 绕过冲突。[官方 CLI 文档](https://uniapp.dcloud.net.cn/quickstart-cli.html)。
 
-初始 M0/M1 已推送至 `main`（`ce0bf0f`）；M2/M3 在 `codex/m2-m3` 开发。已实现内容、测试和已知限制见 [M2/M3 验证记录](docs/verification-m23.md)，原阶段记录保留在 [M0/M1 验证记录](docs/verification.md)。下一阶段是 M4 冻结清算、仅收款人确认和活动结束财务校验；规则见 [工程假设](docs/assumptions.md)。
+初始 M0/M1 已推送至 `main`（`ce0bf0f`），M2/M3 位于 `codex/m2-m3`（`965e6c3`），M4 在其基础上的 `codex/m4` 分支开发。当前结果见 [M4 验证记录](docs/verification-m4.md)，历史保留在 [M2/M3](docs/verification-m23.md) 与 [M0/M1](docs/verification.md)。下一阶段为 M5 微信工具/真机验收与演示、性能打磨；规则见 [工程假设](docs/assumptions.md)。

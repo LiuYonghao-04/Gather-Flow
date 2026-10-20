@@ -34,6 +34,10 @@ onShow(() => {
 });
 const labels: Record<string, string> = {
   ACTIVITY_CREATED: '发起了这次相聚',
+  SETTLEMENT_FROZEN: '冻结了最终清算',
+  SETTLEMENT_REOPENED: '重新开放了记账',
+  SETTLEMENT_RECEIVED: '确认了整笔到账',
+  ACTIVITY_ARCHIVED: '结束活动并归档',
   INVITE_CREATED: '准备了一份邀请',
   MEMBER_JOINED_DIRECT: '通过房主直邀加入',
   JOIN_REQUESTED: '申请加入活动',
@@ -73,6 +77,14 @@ function describe(event: AuditEvent): string {
   const before = event.before ?? {};
   const name = (value: unknown) =>
     data.value?.activity.members.find((m) => m.id === value)?.name ?? String(value ?? '');
+  if (event.action === 'SETTLEMENT_FROZEN')
+    return `第 ${after.sequence} 份清算 · 共同支出 ¥ ${formatMoney(Number(after.confirmedTotalCents))} · ${after.transferCount} 笔转账，账单冻结。`;
+  if (event.action === 'SETTLEMENT_REOPENED')
+    return `第 ${before.sequence} 份清算已失效，保留历史，重新开放记账。`;
+  if (event.action === 'SETTLEMENT_RECEIVED')
+    return `${name(after.toUserId)} 确认收到 ${name(after.fromUserId)} 的 ¥ ${formatMoney(Number(after.amountCents))}；仅由收款人本人确认。`;
+  if (event.action === 'ACTIVITY_ARCHIVED')
+    return '全部账款结清，由房主明确结束。行程、任务、凭证与账单只读保留。';
   if (event.action === 'PROPOSAL_RESPONDED')
     return `${after.proxy ? '由房主 ' + event.actor.name + ' 代 ' + name(after.userId) + ' 操作：' : name(after.userId) + '：'}${responseLabels[after.response as ProposalResponse] ?? ''} · v${after.version}${after.reason ? ' · ' + after.reason : ''}`;
   if (event.action.endsWith('_REVISED'))

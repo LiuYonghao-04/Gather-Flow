@@ -17,6 +17,7 @@ import { HttpError, ensure } from './errors';
 import { ActivityService } from './services/activities';
 import { InviteService } from './services/invites';
 import { collaborationRoutes } from './collaboration-routes';
+import { settlementRoutes } from './settlement-routes';
 import { MulterError } from 'multer';
 
 export function createApp(db: Db, settings: Pick<Settings, 'mode' | 'corsOrigin'>) {
@@ -33,7 +34,7 @@ export function createApp(db: Db, settings: Pick<Settings, 'mode' | 'corsOrigin'
   );
   app.use(express.json({ limit: '16kb' }));
   app.get('/health', (_req, res) =>
-    res.json({ status: 'ok', mode: settings.mode, milestone: 'M3' }),
+    res.json({ status: 'ok', mode: settings.mode, milestone: 'M4' }),
   );
   app.get('/auth/demo-users', (_req, res) => {
     ensure(settings.mode === 'demo', 404, 'DEMO_DISABLED', '演示入口未启用');
@@ -128,6 +129,7 @@ export function createApp(db: Db, settings: Pick<Settings, 'mode' | 'corsOrigin'
     res.json({ ok: true });
   });
   app.use('/activities/:activityId', collaborationRoutes(db));
+  app.use('/activities/:activityId', settlementRoutes(db));
   app.use((_req, _res, next) => next(new HttpError(404, 'NOT_FOUND', '接口不存在')));
   const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _next) => {
     if (error instanceof ZodError) {

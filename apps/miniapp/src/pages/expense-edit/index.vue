@@ -84,13 +84,17 @@ async function save(input: ExpenseInput) {
       v-else-if="data"
       ><view
         v-if="
-          data.workspace.status !== 'ACTIVE' || (data.expense && data.expense.recorderId !== userId)
+          data.workspace.status !== 'ACTIVE' ||
+          data.workspace.financialFrozen ||
+          (data.expense && data.expense.recorderId !== userId)
         "
         class="notice"
         >{{
           data.workspace.status !== 'ACTIVE'
             ? '活动已归档，账单只读。'
-            : '这笔账只能由原记账人修改；如有疑问，请在详情中提出异议。'
+            : data.workspace.financialFrozen
+              ? '最终清算已冻结，不能新增或修改账单。请返回活动查看最终清算。'
+              : '这笔账只能由原记账人修改；如有疑问，请在详情中提出异议。'
         }}</view
       ><template v-else
         ><view class="field"

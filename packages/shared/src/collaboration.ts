@@ -220,6 +220,7 @@ export interface Plan {
   conflicts: PlanConflict[];
 }
 export interface Workspace {
+  financialFrozen: boolean;
   members: Member[];
   proposals: Proposal[];
   tasks: Task[];

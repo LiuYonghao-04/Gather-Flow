@@ -40,6 +40,13 @@ function name(userId: string) {
           ><text>{{ data.estimate.pendingCount }} 笔待确认</text><text>·</text
           ><text>{{ data.estimate.disputedCount }} 笔有异议</text></view
         ></view
+      ><view v-if="data.frozen || data.status === 'ARCHIVED'" class="notice space-top">{{
+        data.status === 'ARCHIVED'
+          ? '活动已归档，账单与凭证只读。'
+          : '最终清算已冻结，不能增改账单。'
+      }}</view
+      ><button class="btn secondary space-top" @tap="go('/pages/settlement/index?id=' + id)">
+        查看最终清算与到账记录 ›</button
       ><view class="pill-tabs"
         ><button class="pill-tab" :class="{ active: tab === 'bills' }" @tap="tab = 'bills'">
           全部账单</button
@@ -49,7 +56,11 @@ function name(userId: string) {
       ><template v-if="tab === 'bills'"
         ><view class="section-heading"
           ><text>一起花的钱</text
-          ><button class="btn secondary compact" @tap="go('/pages/expense-edit/index?id=' + id)">
+          ><button
+            v-if="data.status === 'ACTIVE' && !data.frozen"
+            class="btn secondary compact"
+            @tap="go('/pages/expense-edit/index?id=' + id)"
+          >
             ＋ 记一笔
           </button></view
         ><view class="chips"
@@ -107,7 +118,7 @@ function name(userId: string) {
         </button></template
       ><template v-else
         ><view class="notice warm"
-          >这是预计结算，以最终确认为准。当前仅纳入已确认、无异议的共同账单；不会生成收款确认或冻结账单。</view
+          >这是预计结算，仅纳入已确认、无异议的共同账单。最终转账与到账记录请查看最终清算。</view
         ><view
           v-if="data.estimate.pendingCount || data.estimate.disputedCount"
           class="notice space-top"

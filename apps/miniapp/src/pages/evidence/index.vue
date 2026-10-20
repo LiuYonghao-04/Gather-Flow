@@ -206,7 +206,7 @@ async function refreshContext() {
         ><view class="section-heading"
           ><text>任务凭证</text><text class="muted">{{ evidence.length }} 份</text></view
         ><EvidenceList :items="evidence" :activity-id="id" /><template
-          v-if="editable && !savedExpenseId"
+          v-if="editable && !data.workspace.financialFrozen && !savedExpenseId"
           ><view class="divider" /><label class="row gap"
             ><switch
               :checked="recordExpense"

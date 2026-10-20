@@ -47,6 +47,7 @@ export interface Member extends User {
   joinedAt: string;
 }
 export interface ActivityDetail extends Activity {
+  financialFrozen: boolean;
   members: Member[];
 }
 export interface JoinApplication {
@@ -92,6 +93,7 @@ export interface ApiErrorBody {
 
 export * from './collaboration';
 export * from './finance';
+export * from './settlement';
 export type ProposalResponse = 'CONFIRM' | 'OBJECTION' | 'OPT_OUT';
 export type TaskProgress = 'UNCLAIMED' | 'IN_PROGRESS' | 'HANDOVER_PENDING' | 'COMPLETED';
 export type ExpenseStatus = 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'DISPUTED' | 'PERSONAL_ONLY';

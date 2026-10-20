@@ -1,5 +1,7 @@
 # M2 / M3 验证记录
 
+> 阶段历史：M2/M3 已推送为 965e6c3。后续 M4 当前结果见 [verification-m4.md](verification-m4.md)，下方未实现描述保留当时状态。
+
 日期：2026-10-19（Asia/Shanghai）。环境：Windows、Node 22.18.0、npm 10.9.3。基于已推送的 M0/M1（`ce0bf0f`），本阶段在 `codex/m2-m3` 实现协商、任务、行程、凭证和 AA 账单；不包含 M4 最终清算与活动关闭。
 
 ## 命令与结果

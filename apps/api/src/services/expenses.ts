@@ -93,6 +93,7 @@ export class ExpenseService extends EvidenceService {
     return this.db
       .transaction(() => {
         this.requireActive(activityId, actor);
+        this.requireFinanceOpen(activityId);
         const valid = this.validateInput(activityId, actor, input);
         const id = randomUUID();
         const at = new Date().toISOString();
@@ -117,6 +118,7 @@ export class ExpenseService extends EvidenceService {
     return this.db
       .transaction(() => {
         this.requireActive(activityId, actor);
+        this.requireFinanceOpen(activityId);
         const expense = this.expense(activityId, id, actor);
         this.checkVersion(expense.revision, expected);
         ensure(
@@ -149,6 +151,7 @@ export class ExpenseService extends EvidenceService {
     return this.db
       .transaction(() => {
         this.requireActive(activityId, actor);
+        this.requireFinanceOpen(activityId);
         const expense = this.expense(activityId, id, actor);
         this.checkVersion(expense.revision, expected);
         ensure(
@@ -176,6 +179,7 @@ export class ExpenseService extends EvidenceService {
     return this.db
       .transaction(() => {
         this.requireActive(activityId, actor);
+        this.requireFinanceOpen(activityId);
         const expense = this.expense(activityId, id, actor);
         this.checkVersion(expense.revision, expected);
         ensure(
@@ -209,6 +213,7 @@ export class ExpenseService extends EvidenceService {
     return this.db
       .transaction(() => {
         this.requireActive(activityId, actor);
+        this.requireFinanceOpen(activityId);
         const expense = this.expense(activityId, id, actor);
         const dispute = expense.disputes.find((x) => x.id === disputeId);
         ensure(dispute, 404, 'NOT_FOUND', '异议不存在');
@@ -244,6 +249,8 @@ export class ExpenseService extends EvidenceService {
     const disputedCount = expenses.filter((x) => x.status === 'DISPUTED').length;
     return {
       members,
+      frozen: this.financialFrozen(activityId),
+      status: this.detail(activityId, actor).status,
       expenses,
       estimate: {
         balances,

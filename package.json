@@ -23,6 +23,7 @@
     "format:check": "prettier --check apps packages scripts docs *.json *.ts README.md",
     "demo:m1": "tsx scripts/demo-m1.ts",
     "demo:m23": "tsx scripts/demo-m23.ts",
+    "demo:m4": "npm run demo:m23 && tsx scripts/demo-m4.ts",
     "build:api": "npm run build -w @gatherflow/api",
     "build:mp-weixin": "npm run build:mp-weixin -w @gatherflow/miniapp",
     "build:h5": "npm run build:h5 -w @gatherflow/miniapp",

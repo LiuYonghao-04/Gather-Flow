@@ -40,6 +40,23 @@ export class ActivityService {
     ensure(membership.status === 'ACTIVE', 409, 'ACTIVITY_ARCHIVED', '活动已归档，只能查看');
   }
 
+  financialFrozen(activityId: string): boolean {
+    return Boolean(
+      this.db
+        .prepare('SELECT 1 FROM settlements WHERE activity_id = ? AND reopened_at IS NULL')
+        .get(activityId),
+    );
+  }
+
+  requireFinanceOpen(activityId: string): void {
+    ensure(
+      !this.financialFrozen(activityId),
+      409,
+      'FINANCE_FROZEN',
+      '最终清算已冻结，请在清算页核对；尚无到账记录时可由房主重新开放记账',
+    );
+  }
+
   audit(
     activityId: string,
     actorId: string,
@@ -104,7 +121,7 @@ export class ActivityService {
       ORDER BY CASE WHEN m.role = 'OWNER' THEN 0 ELSE 1 END, m.joined_at, u.id`,
       )
       .all(id) as Member[];
-    return { ...activity, members };
+    return { ...activity, members, financialFrozen: this.financialFrozen(id) };
   }
 
   history(activityId: string, userId: string, offset = 0): AuditEvent[] {

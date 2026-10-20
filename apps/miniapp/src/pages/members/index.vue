@@ -74,6 +74,15 @@ function review(application: JoinApplication, decision: 'APPROVED' | 'REJECTED')
           份值得被听见的想法。</text
         ></view
       >
+      <view
+        v-if="data.activity.status === 'ARCHIVED' || data.activity.financialFrozen"
+        class="notice"
+        >{{
+          data.activity.status === 'ARCHIVED'
+            ? '活动已归档，成员与申请记录只读。'
+            : '最终清算已冻结，暂停新增成员。'
+        }}</view
+      >
       <template v-if="data.activity.role === 'OWNER'"
         ><view class="section-heading"
           ><text>想加入的朋友</text
@@ -94,7 +103,9 @@ function review(application: JoinApplication, decision: 'APPROVED' | 'REJECTED')
           ><text class="application-message">{{
             application.message || '想和大家一起参加这次活动。'
           }}</text
-          ><view class="row review-actions"
+          ><view
+            v-if="data.activity.status === 'ACTIVE' && !data.activity.financialFrozen"
+            class="row review-actions"
             ><button
               class="btn outline compact"
               :disabled="!!busy"
@@ -115,7 +126,7 @@ function review(application: JoinApplication, decision: 'APPROVED' | 'REJECTED')
       <view class="section-heading"
         ><text>已经在一起</text
         ><button
-          v-if="data.activity.status === 'ACTIVE'"
+          v-if="data.activity.status === 'ACTIVE' && !data.activity.financialFrozen"
           class="btn text-btn"
           @tap="go('/pages/share/index?id=' + id)"
         >

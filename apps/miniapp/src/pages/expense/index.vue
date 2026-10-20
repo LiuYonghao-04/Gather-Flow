@@ -27,7 +27,9 @@ const labels: Record<ExpenseStatus, string> = {
   DISPUTED: '有异议 · 暂停计入结算',
   PERSONAL_ONLY: '个人消费 · 不参与共同 AA',
 };
-const active = computed(() => data.value?.workspace.status === 'ACTIVE');
+const active = computed(
+  () => data.value?.workspace.status === 'ACTIVE' && !data.value.workspace.financialFrozen,
+);
 const mayConfirm = computed(() => {
   const e = data.value?.expense;
   return (
@@ -91,7 +93,17 @@ async function withdraw(disputeId: string) {
           }"
           >{{ labels[data.expense.status] }}</text
         ></view
-      ><view class="card"
+      ><view
+        v-if="data.workspace.financialFrozen || data.workspace.status === 'ARCHIVED'"
+        class="notice space-top"
+        >{{
+          data.workspace.status === 'ARCHIVED'
+            ? '活动已归档，账单只读。'
+            : '最终清算已冻结，账单只读。需要更正时请先查看清算状态。'
+        }}<button class="btn text-btn" @tap="go('/pages/settlement/index?id=' + id)">
+          查看最终清算 ›
+        </button></view
+      ><view class="card space-top"
         ><text class="bill-total">¥ {{ formatMoney(data.expense.totalCents) }}</text
         ><view class="row between list-row"
           ><text class="muted">实际付款人</text><text>{{ name(data.expense.payerId) }}</text></view

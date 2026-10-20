@@ -1,5 +1,6 @@
 import { collaborationMigration } from './collaboration-migration';
 import { financeMigration } from './finance-migration';
+import { settlementMigration } from './settlement-migration';
 export const migrations = [
   {
     version: 1,
@@ -53,4 +54,5 @@ export const migrations = [
   },
   collaborationMigration,
   financeMigration,
+  settlementMigration,
 ];

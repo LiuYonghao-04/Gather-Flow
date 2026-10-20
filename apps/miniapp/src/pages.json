@@ -42,7 +42,15 @@
       "path": "pages/expense/index",
       "style": { "navigationBarTitleText": "账单详情", "enablePullDownRefresh": true }
     },
-    { "path": "pages/expense-edit/index", "style": { "navigationBarTitleText": "记一笔费用" } }
+    { "path": "pages/expense-edit/index", "style": { "navigationBarTitleText": "记一笔费用" } },
+    {
+      "path": "pages/settlement/index",
+      "style": { "navigationBarTitleText": "最终清算", "enablePullDownRefresh": true }
+    },
+    {
+      "path": "pages/archive/index",
+      "style": { "navigationBarTitleText": "相聚档案", "enablePullDownRefresh": true }
+    }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",

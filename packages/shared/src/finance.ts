@@ -189,6 +189,8 @@ export function matchTransfers(balances: Balance[]): Transfer[] {
   return transfers;
 }
 export interface FinanceWorkspace {
+  frozen: boolean;
+  status: 'ACTIVE' | 'ARCHIVED';
   expenses: Expense[];
   estimate: Estimate;
   members: User[];

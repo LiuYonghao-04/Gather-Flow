@@ -636,6 +636,7 @@ export class CollaborationService extends ActivityService {
     ).map((x) => this.task(activityId, x.id, actor));
     return {
       members: activity.members,
+      financialFrozen: this.financialFrozen(activityId),
       ownerId: activity.ownerId,
       status: activity.status,
       proposals,

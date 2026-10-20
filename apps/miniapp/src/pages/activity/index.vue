@@ -87,7 +87,7 @@ onPullDownRefresh(async () => {
               small
             /><text class="member-count">{{ activity.memberCount }} 人同行</text></view
           ><button
-            v-if="activity.status === 'ACTIVE'"
+            v-if="activity.status === 'ACTIVE' && !activity.finance.frozen"
             class="btn text-btn"
             @tap="go('/pages/share/index?id=' + id)"
           >
@@ -158,6 +158,25 @@ onPullDownRefresh(async () => {
       >
         费用待处理：{{ activity.finance.estimate.pendingCount }} 笔待确认 ·
         {{ activity.finance.estimate.disputedCount }} 笔有异议
+      </button>
+      <button
+        class="btn space-top"
+        @tap="
+          go(
+            '/pages/' +
+              (activity.status === 'ARCHIVED' ? 'archive' : 'settlement') +
+              '/index?id=' +
+              id,
+          )
+        "
+      >
+        {{
+          activity.status === 'ARCHIVED'
+            ? '查看相聚档案'
+            : activity.finance.frozen
+              ? '查看最终清算与到账'
+              : '最终清算与结束活动'
+        }}
       </button>
       <view class="agreement"
         ><GfIcon name="leaf" /><view

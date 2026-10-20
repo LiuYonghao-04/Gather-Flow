@@ -48,4 +48,14 @@ M2/M3 所有写操作使用立即事务：权限、当前版本/修订号、业�
 
 ## 后续扩展
 
-M4 待引入冻结快照、仅收款方确认和活动结束财务校验。M3 的 Estimate 只供预览，readyForSettlement 表示当前无待确认/异议，不表示已结清，也没有据此结束活动的接口。M5 待做真实微信开发者工具/真机验收、生产身份接入与性能打磨。
+M5 待做真实微信开发者工具/真机验收、真实身份接入与性能打磨。M3 的 Estimate 仍只供预览，readyForSettlement 不表示已结清。
+
+## M4 清算与归档
+
+迁移 v4 增加 settlements、settlement_transfers 和活动归档时间/操作者。SettlementService 在 BEGIN IMMEDIATE 中校验房主权限、账单状态与财务版本，保存账单修订、成员和净额快照以及转账清单。数据库触发器禁止改写快照核心字段、转账参与者/金额和已有到账记录。
+
+财务版本由有序成员 ID、账单 ID/修订号/状态的 SHA-256 摘要组成。冻结与关闭要求客户端提交已查看的版本；关闭还校验当前快照 ID。账单所有写入口在同一事务中检查冻结，新增成员与审批加入也受保护，非财务准备工作可继续。只读清算/归档聚合使用读事务保持一致视图。
+
+收款确认绑定当前快照与转账 ID，只允许 toUserId 本人；重复请求幂等。重开只允许房主且不能有任何到账记录，只标记旧快照失效，不删除历史。独立进程的收款/重开竞争验证事务互斥。归档事务重新检查全部财务条件，写入归档状态与审计；无共享费用时可在房主明确关闭时原子生成零转账快照。归档后已有统一 requireActive 保护所有业务写入，成员仍能查阅行程、任务、凭证、账单、快照与审计。
+
+接口：GET/POST /activities/:id/settlement；POST /activities/:id/settlements/:snapshotId/reopen；POST /activities/:id/settlements/:snapshotId/transfers/:transferId/receipt；POST /activities/:id/close；GET /activities/:id/archive。严格请求 schema 拒绝客户端伪造金额或到账人。

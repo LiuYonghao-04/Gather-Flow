@@ -19,7 +19,7 @@ onLoad((options) => {
     try {
       const path = decodeURIComponent(raw);
       if (
-        /^\/pages\/(index|activity|invite|members|share|create|audit|collaboration|task|proposal|proposal-edit|evidence|expenses|expense|expense-edit)\/index(?:\?|$)/.test(
+        /^\/pages\/(index|activity|invite|members|share|create|audit|collaboration|task|proposal|proposal-edit|evidence|expenses|expense|expense-edit|settlement|archive)\/index(?:\?|$)/.test(
           path,
         )
       )

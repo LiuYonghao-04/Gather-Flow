@@ -43,6 +43,7 @@ export class InviteService {
     return this.db
       .transaction(() => {
         this.activities.requireActive(activityId, userId, kind === 'DIRECT');
+        this.activities.requireFinanceOpen(activityId);
         const token = secretToken();
         const id = randomUUID();
         const createdAt = new Date().toISOString();
@@ -113,6 +114,7 @@ export class InviteService {
         }
         if (invite.kind !== 'DIRECT' || invite.consumedBy)
           return { ...result, outcome: 'APPROVAL_REQUIRED' as const };
+        this.activities.requireFinanceOpen(invite.activityId);
         const now = new Date().toISOString();
         const consumed = this.db
           .prepare(
@@ -152,6 +154,7 @@ export class InviteService {
       .transaction(() => {
         const invite = this.lookup(token);
         ensure(invite.status === 'ACTIVE', 409, 'ACTIVITY_ARCHIVED', '活动已归档，不能再申请');
+        this.activities.requireFinanceOpen(invite.activityId);
         if (
           this.db
             .prepare('SELECT 1 FROM activity_members WHERE activity_id = ? AND user_id = ?')
@@ -204,6 +207,7 @@ export class InviteService {
     this.db
       .transaction(() => {
         this.activities.requireActive(activityId, userId, true);
+        if (decision === 'APPROVED') this.activities.requireFinanceOpen(activityId);
         const application = this.db
           .prepare(
             'SELECT id, user_id AS userId, status FROM join_applications WHERE id = ? AND activity_id = ?',
