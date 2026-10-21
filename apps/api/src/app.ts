@@ -19,11 +19,18 @@ import { InviteService } from './services/invites';
 import { collaborationRoutes } from './collaboration-routes';
 import { settlementRoutes } from './settlement-routes';
 import { MulterError } from 'multer';
+import { WechatAuthService } from './wechat-auth';
 
-export function createApp(db: Db, settings: Pick<Settings, 'mode' | 'corsOrigin'>) {
+export function createApp(
+  db: Db,
+  settings: Pick<Settings, 'mode' | 'corsOrigin' | 'wechatAppId' | 'wechatAppSecret'>,
+  dependencies: { wechatFetch?: typeof fetch } = {},
+) {
   const app = express();
   const activities = new ActivityService(db);
   const invites = new InviteService(db);
+  const wechat = new WechatAuthService(db, settings, dependencies.wechatFetch);
+  const loginAttempts = new Map<string, { count: number; until: number }>();
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(
@@ -36,6 +43,10 @@ export function createApp(db: Db, settings: Pick<Settings, 'mode' | 'corsOrigin'
   app.get('/health', (_req, res) =>
     res.json({ status: 'ok', mode: settings.mode, milestone: 'M5' }),
   );
+  app.use('/auth', (_req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
   app.get('/auth/demo-users', (_req, res) => {
     ensure(settings.mode === 'demo', 404, 'DEMO_DISABLED', '演示入口未启用');
     res.json(
@@ -48,26 +59,37 @@ export function createApp(db: Db, settings: Pick<Settings, 'mode' | 'corsOrigin'
     ensure(settings.mode === 'demo', 404, 'DEMO_DISABLED', '演示登录未启用');
     res.json(demoLogin(db, demoLoginSchema.parse(req.body).userId));
   });
-  app.post('/auth/wechat-login', (req, _res) => {
-    z.object({ code: z.string().min(1).max(256) })
+  app.post('/auth/wechat-login', async (req, res) => {
+    ensure(settings.mode === 'wechat', 404, 'WECHAT_DISABLED', '当前为演示环境，请选择演示身份');
+    const { code } = z
+      .object({ code: z.string().trim().min(1).max(256) })
       .strict()
       .parse(req.body);
-    throw new HttpError(
-      501,
-      'WECHAT_NOT_CONFIGURED',
-      '微信登录接入层尚未实现，当前请使用本地演示环境',
+    const now = Date.now();
+    for (const [key, value] of loginAttempts) if (value.until <= now) loginAttempts.delete(key);
+    const ip = req.ip ?? 'unknown';
+    const attempts = loginAttempts.get(ip) ?? { count: 0, until: now + 60000 };
+    ensure(
+      loginAttempts.has(ip) || loginAttempts.size < 1000,
+      429,
+      'LOGIN_RATE_LIMITED',
+      '登录繁忙，请稍后重试',
     );
+    loginAttempts.set(ip, attempts);
+    attempts.count++;
+    ensure(attempts.count <= 20, 429, 'LOGIN_RATE_LIMITED', '登录过于频繁，请一分钟后重试');
+    res.json(await wechat.login(code));
   });
   app.get('/invites/:token', (req, res) => {
     res.json(
       invites.preview(
         inviteTokenSchema.parse(req.params.token),
-        authenticate(db, req, settings.mode, true),
+        authenticate(db, req, settings.mode, true, settings.wechatAppId),
       ),
     );
   });
   app.use((req, res, next) => {
-    res.locals.userId = authenticate(db, req, settings.mode);
+    res.locals.userId = authenticate(db, req, settings.mode, false, settings.wechatAppId);
     next();
   });
   const actor = (locals: Record<string, unknown>): string => z.string().parse(locals.userId);

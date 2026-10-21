@@ -43,17 +43,27 @@ async function select(user: User) {
   }
 }
 function wechatLogin() {
+  if (busy.value) return;
   // #ifdef MP-WEIXIN
+  busy.value = 'wechat';
   uni.login({
     provider: 'weixin',
+    timeout: 8000,
     success: async ({ code }) => {
       try {
-        await api('/auth/wechat-login', 'POST', { code });
+        if (!code) throw new Error('没有取得微信登录凭证，请重新尝试');
+        await session.loginWechat(code);
+        uni.reLaunch({ url: returnTo });
       } catch (cause) {
         showError(cause);
+      } finally {
+        busy.value = '';
       }
     },
-    fail: showError,
+    fail: () => {
+      busy.value = '';
+      showError(new Error('微信登录未完成，请检查网络后重试'));
+    },
   });
   // #endif
   // #ifndef MP-WEIXIN
@@ -81,6 +91,7 @@ function wechatLogin() {
         <button
           v-for="user in users"
           :key="user.id"
+          :id="'demo-user-' + user.id"
           class="identity"
           :disabled="!!busy"
           @tap="select(user)"
@@ -102,8 +113,9 @@ function wechatLogin() {
       }}</text>
     </template>
     <template v-else
-      ><button class="btn" @tap="wechatLogin">微信登录</button
-      ><text class="helper">微信登录尚未接入，当前版本支持本地演示。</text></template
+      ><button class="btn" :disabled="!!busy" :loading="!!busy" @tap="wechatLogin">
+        {{ busy ? '正在登录…' : '微信登录' }}</button
+      ><text class="helper">登录后查看你参与的活动，一起商量下一次相聚。</text></template
     >
   </view>
 </template>

@@ -14,9 +14,14 @@ export const useSessionStore = defineStore('session', () => {
     persistSession(next);
     session.value = next;
   }
+  async function loginWechat(code: string) {
+    const next = await api<Session>('/auth/wechat-login', 'POST', { code });
+    persistSession(next);
+    session.value = next;
+  }
   function clear() {
     persistSession(null);
     session.value = null;
   }
-  return { session, user, login, clear, refresh };
+  return { session, user, login, loginWechat, clear, refresh };
 });

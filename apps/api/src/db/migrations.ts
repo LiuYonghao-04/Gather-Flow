@@ -55,4 +55,24 @@ export const migrations = [
   collaborationMigration,
   financeMigration,
   settlementMigration,
+  {
+    version: 5,
+    sql: `
+    CREATE TABLE wechat_identities (
+      app_id TEXT NOT NULL,
+      openid TEXT NOT NULL,
+      user_id TEXT NOT NULL UNIQUE REFERENCES users(id),
+      PRIMARY KEY (app_id, openid)
+    );
+    `,
+  },
+  {
+    version: 6,
+    sql: `
+    CREATE TABLE wechat_session_apps (
+      token_hash TEXT PRIMARY KEY REFERENCES sessions(token_hash) ON DELETE CASCADE,
+      app_id TEXT NOT NULL
+    );
+    `,
+  },
 ];

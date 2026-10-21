@@ -70,7 +70,14 @@ export async function previewEvidence(activityId: string, evidenceId: string): P
       fail: () => reject(new Error('图片加载失败，请重试')),
     }),
   );
-  uni.previewImage({ urls: [path], current: path });
+  await new Promise<void>((resolve, reject) =>
+    uni.previewImage({
+      urls: [path],
+      current: path,
+      success: () => resolve(),
+      fail: () => reject(new Error('暂时无法预览图片，请重试')),
+    }),
+  );
 }
 export function confirmAction(title: string, content: string): Promise<boolean> {
   return new Promise((resolve) =>

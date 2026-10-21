@@ -2,7 +2,7 @@
 
 **一个人发起，所有人决定。** 面向朋友聚会与短途旅行的微信小程序。技术栈为 uni-app、Vue 3、TypeScript、Vite、Pinia，以及 Express + SQLite。
 
-当前实现到 **M5 本地质量与演示版本**：18 个小程序页面，活动邀请、协商任务、私有凭证、AA 账单、最终清算及只读归档贯通真实 API 和 SQLite。57 项测试通过，五人全过程脚本、异常恢复、费用批量读取与性能记录已补齐。微信开发者工具已打开，登录页和已归档活动截图已保存；**真机、微信发送分享和真实微信身份登录仍未验收/接入**。详见 [M5 验证记录](docs/verification-m5.md)。
+当前已完成 **M5 及真实微信身份接入**：18 个小程序页面贯通真实 API 和 SQLite，微信开发者工具已通过真实微信登录、重新登录和会话鉴权；模拟器事件回归覆盖账单确认、冻结/重开、四笔收款与 ¥868.00 只读归档。真机分享发送、相册和弱网仍待设备验收。详见 [微信接入验证](docs/verification-wechat.md) 与 [接入指南](docs/wechat-login.md)。
 
 ## 快速启动
 
@@ -19,7 +19,7 @@ npm run dev
 
 在微信开发者工具中导入 **`apps/miniapp/dist/dev/mp-weixin`**，不要导入仓库根目录。已配置项目提供的 AppID `wxf6db22d44eb01228`，并显式固定小程序根目录与已验证基础库 3.17.4。更换 AppID 时同步修改 `src/manifest.json` 与 `src/project.config.json`。电脑上开发者工具访问本地 HTTP API，需要开启“不校验合法域名”调试选项。
 
-稳定演示可先运行 `npm run build:mp-weixin`，导入 **`apps/miniapp/dist/build/mp-weixin`**。微信模拟器打开、登录和已归档活动展示已验证；完整自动化点击流程未通过当前工具版本的元素查询接口。真机无法用 `127.0.0.1` 访问电脑；局域网调试需另配电脑地址和网络，跨互联网需要可访问的 HTTPS 后端及微信合法域名。故障处理及截图命令见 [微信演示说明](docs/wechat-demo.md)。
+稳定演示可先运行 `npm run build:mp-weixin`，导入 **`apps/miniapp/dist/build/mp-weixin`**。模拟器事件回归已通过真实按钮绑定与原生确认弹窗，运行 `npm run wechat:test` 可复测。真机无法用 `127.0.0.1` 访问电脑；局域网调试需另配电脑地址和网络，跨互联网需要可访问的 HTTPS 后端及微信合法域名。故障处理及截图命令见 [微信演示说明](docs/wechat-demo.md)。
 
 辅助 H5 预览另开一个终端：
 
@@ -54,26 +54,30 @@ npm run demo:m5
 
 ## 常用命令
 
-| 命令                               | 用途                                   |
-| ---------------------------------- | -------------------------------------- |
-| `npm run dev`                      | API + 微信开发编译                     |
-| `npm run dev:api`                  | 单独运行 API                           |
-| `npm run dev:mp-weixin`            | 微信开发编译，持续监听                 |
-| `npm run dev:h5`                   | H5 辅助预览                            |
-| `npm run db:migrate`               | 应用增量建表迁移                       |
-| `npm run db:seed`                  | 幂等准备五个账号与起始活动             |
-| `npm run typecheck`                | 全仓库 strict TypeScript 检查          |
-| `npm test`                         | API 权限/业务测试及跨进程并发测试      |
-| `npm run demo:m1`                  | 对运行中的 API 执行五人流程            |
-| `npm run demo:m23`                 | 五人协商、任务、凭证与 AA 演示         |
-| `npm run demo:m4`                  | 五人全过程，直至最终清算与只读归档     |
-| `npm run demo:m5`                  | 完整邀请审批至归档的统一演示入口       |
-| `npm run benchmark`                | 隔离费用汇总基准，不修改演示数据库     |
-| `npm run wechat:capture`           | 保存实际微信模拟器截图，不代表业务断言 |
-| `npm run build`                    | API 打包 + 微信正式构建                |
-| `npm run build:h5`                 | H5 辅助正式构建                        |
-| `npm run check`                    | 类型检查 + 测试 + 主目标构建           |
-| `npm run start -w @gatherflow/api` | 运行已构建的 API                       |
+| 命令                               | 用途                                     |
+| ---------------------------------- | ---------------------------------------- |
+| `npm run dev`                      | API + 微信开发编译                       |
+| `npm run dev:api`                  | 单独运行 API                             |
+| `npm run dev:mp-weixin`            | 微信开发编译，持续监听                   |
+| `npm run dev:h5`                   | H5 辅助预览                              |
+| `npm run db:migrate`               | 应用增量建表迁移                         |
+| `npm run db:seed`                  | 幂等准备五个账号与起始活动               |
+| `npm run typecheck`                | 全仓库 strict TypeScript 检查            |
+| `npm test`                         | API 权限/业务测试及跨进程并发测试        |
+| `npm run demo:m1`                  | 对运行中的 API 执行五人流程              |
+| `npm run demo:m23`                 | 五人协商、任务、凭证与 AA 演示           |
+| `npm run demo:m4`                  | 五人全过程，直至最终清算与只读归档       |
+| `npm run demo:m5`                  | 完整邀请审批至归档的统一演示入口         |
+| `npm run benchmark`                | 隔离费用汇总基准，不修改演示数据库       |
+| `npm run wechat:capture`           | 保存实际微信模拟器截图，不代表业务断言   |
+| `npm run wechat:test`              | 新建五人数据并运行微信模拟器事件回归     |
+| `npm run dev:wechat-api`           | 独立微信身份 API，端口 3003              |
+| `npm run build:wechat`             | 微信身份构建，输出 dist/wechat/mp-weixin |
+| `npm run wechat:login-test`        | 两次真实微信登录及会话鉴权复测           |
+| `npm run build`                    | API 打包 + 微信正式构建                  |
+| `npm run build:h5`                 | H5 辅助正式构建                          |
+| `npm run check`                    | 类型检查 + 测试 + 主目标构建             |
+| `npm run start -w @gatherflow/api` | 运行已构建的 API                         |
 
 微信正式产物：`apps/miniapp/dist/build/mp-weixin`。API 产物：`apps/api/dist/server.js`。
 
@@ -83,7 +87,7 @@ npm run demo:m5
 
 - SQLite：`apps/api/data/gatherflow.sqlite`，已加入 `.gitignore`。
 - 演示身份只在服务端 `APP_MODE=demo` 开放。`NODE_ENV=production` 禁止 demo，wechat 模式拒绝旧 demo 会话。
-- `POST /auth/wechat-login` 是明确返回 `501 WECHAT_NOT_CONFIGURED` 的接入边界；没有假装已完成真实微信身份验证。
+- `POST /auth/wechat-login` 已实现真实 code 换身份；未配置密钥时返回 `501 WECHAT_NOT_CONFIGURED`。使用 `npm run dev:wechat-api` 和 `npm run build:wechat` 启动独立微信身份版本，导入 `apps/miniapp/dist/wechat/mp-weixin`，详见 [接入指南](docs/wechat-login.md)。
 - 会话有效期 24 小时，会话令牌与邀请码均为 32 字节随机值；数据库只存哈希。
 - 私有图片由任务负责人上传，服务端解码并移除 EXIF 后存入 SQLite BLOB；读取必须经过成员鉴权。没有公开文件目录或真实订单样本。单张最大 5 MB，仅支持单帧 JPG/PNG/WebP。
 - 方案表态绑定版本、账单确认绑定修订号。房主明确冻结最终清算后锁定财务输入；仅最终收款人确认整笔到账，全部结清后房主明确结束。无人确认到账可重开；已有到账不可自动回滚。
@@ -120,4 +124,4 @@ GatherFlow_Codex.md         # 用户原始需求（保留原文）
 
 基于 DCloud 官方 `uni-preset-vue#vite-ts`，来源提交 `6fb81ac3c5736b8b0a83e667b3ed90223d458dd8`。保留官方匹配的 DCloud `3.0.0-5020420260813003` / Vite `5.2.8` 组合，锁定依赖，没有用 `--force` 或 `--legacy-peer-deps` 绕过冲突。[官方 CLI 文档](https://uniapp.dcloud.net.cn/quickstart-cli.html)。
 
-初始 M0/M1 在 `main`（`ce0bf0f`），M2/M3 在 `codex/m2-m3`（`965e6c3`），M4 在 `codex/m4`（`5ea1ca2`），M5 基于 M4 在 `codex/m5` 开发。当前结果见 [M5 验证记录](docs/verification-m5.md) 和 [性能记录](docs/performance.md)。历史保留在 [M4](docs/verification-m4.md)、[M2/M3](docs/verification-m23.md) 与 [M0/M1](docs/verification.md)。后续是微信真机、分享与真实身份接入，规则见 [工程假设](docs/assumptions.md)。
+初始 M0/M1 在 `main`（`ce0bf0f`），M2/M3 在 `codex/m2-m3`（`965e6c3`），M4 在 `codex/m4`（`5ea1ca2`），M5 基于 M4 在 `codex/m5` 开发。当前结果见 [M5 验证记录](docs/verification-m5.md) 和 [性能记录](docs/performance.md)。历史保留在 [M4](docs/verification-m4.md)、[M2/M3](docs/verification-m23.md) 与 [M0/M1](docs/verification.md)。M5 后续接入在 `codex/wechat-integration`，真实登录与模拟器回归见 [微信接入验证](docs/verification-wechat.md)。剩余为真机分享、相册与弱网验收，规则见 [工程假设](docs/assumptions.md)。

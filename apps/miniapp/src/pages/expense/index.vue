@@ -127,7 +127,14 @@ async function withdraw(disputeId: string) {
           ><text class="amount">¥ {{ formatMoney(s.amountCents) }}</text></view
         ></view
       ><view v-if="mayConfirm || mayDispute" class="actions"
-        ><button v-if="mayConfirm" class="btn" :disabled="busy" :loading="busy" @tap="confirm">
+        ><button
+          id="confirm-expense"
+          v-if="mayConfirm"
+          class="btn"
+          :disabled="busy"
+          :loading="busy"
+          @tap="confirm"
+        >
           这笔账没问题</button
         ><button v-if="mayDispute" class="btn outline" :disabled="busy" @tap="disputeOpen = true">
           有异议

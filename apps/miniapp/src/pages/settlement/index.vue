@@ -100,13 +100,20 @@ function close() {
           ><text class="hero-foot">冻结于 {{ formatTime(data.current.createdAt) }}</text></view
         >
         <SettlementLedger
+          id="current-ledger"
           :settlement="data.current"
           :viewer-id="userId"
           :allow-receipt="data.activity.status === 'ACTIVE'"
           :busy="busy"
           @receive="receive"
         />
-        <button v-if="data.canReopen" class="btn outline" :disabled="busy" @tap="reopen">
+        <button
+          id="reopen-settlement"
+          v-if="data.canReopen"
+          class="btn outline"
+          :disabled="busy"
+          @tap="reopen"
+        >
           发现遗漏，重新开放记账
         </button>
         <view
@@ -126,6 +133,7 @@ function close() {
           reason
         }}</view>
         <button
+          id="freeze-settlement"
           v-if="data.canFreeze"
           class="btn space-top"
           :disabled="busy"
@@ -149,6 +157,7 @@ function close() {
           }}结束后，所有内容只读。</text
         >
         <button
+          id="close-activity"
           v-if="data.activity.ownerId === userId"
           class="btn space-top"
           :disabled="busy || !data.canClose"

@@ -49,7 +49,8 @@ const name = (id: string) => props.settlement.snapshot.members.find((m) => m.id 
       }}</text>
       <button
         v-if="allowReceipt && !settlement.reopenedAt && !t.receivedAt && t.toUserId === viewerId"
-        class="btn secondary space-top"
+        class="btn secondary space-top receipt-action"
+        :data-transfer-id="t.id"
         :disabled="busy"
         :loading="busy"
         @tap="$emit('receive', t)"

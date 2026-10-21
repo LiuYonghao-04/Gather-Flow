@@ -9,6 +9,7 @@ export function authenticate(
   req: Request,
   mode: Session['mode'],
   optional = false,
+  wechatAppId?: string,
 ): string | undefined {
   const authorization = req.get('authorization');
   if (!authorization && optional) return undefined;
@@ -16,15 +17,20 @@ export function authenticate(
     authorization && /^Bearer [a-f0-9]{64}$/.test(authorization),
     401,
     'LOGIN_REQUIRED',
-    '请先选择身份登录',
+    '请先登录',
   );
   const token = authorization.slice(7);
   const session = db
     .prepare(
       `SELECT s.user_id AS userId FROM sessions s JOIN users u ON u.id = s.user_id
-    WHERE s.token_hash = ? AND s.mode = ? AND u.auth_kind = ? AND s.expires_at > ?`,
+    WHERE s.token_hash = ? AND s.mode = ? AND u.auth_kind = ? AND s.expires_at > ?
+    AND (s.mode != 'wechat' OR EXISTS (
+      SELECT 1 FROM wechat_session_apps w WHERE w.token_hash = s.token_hash AND w.app_id = ?
+    ))`,
     )
-    .get(hashToken(token), mode, mode, new Date().toISOString()) as { userId: string } | undefined;
+    .get(hashToken(token), mode, mode, new Date().toISOString(), wechatAppId ?? null) as
+    | { userId: string }
+    | undefined;
   ensure(session, 401, 'SESSION_EXPIRED', '登录已过期，请重新登录');
   return session.userId;
 }

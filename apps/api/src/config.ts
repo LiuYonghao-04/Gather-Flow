@@ -7,6 +7,8 @@ export interface Settings {
   port: number;
   databasePath: string;
   corsOrigin: string;
+  wechatAppId?: string;
+  wechatAppSecret?: string;
 }
 
 export function getSettings(env: NodeJS.ProcessEnv = process.env): Settings {
@@ -27,5 +29,7 @@ export function getSettings(env: NodeJS.ProcessEnv = process.env): Settings {
       .parse(env.PORT ?? 3001),
     databasePath: resolve(env.DATABASE_PATH ?? './data/gatherflow.sqlite'),
     corsOrigin: env.CORS_ORIGIN ?? 'http://localhost:5173,http://127.0.0.1:5173',
+    wechatAppId: env.WECHAT_APP_ID?.trim() || undefined,
+    wechatAppSecret: env.WECHAT_APP_SECRET?.trim() || undefined,
   };
 }
