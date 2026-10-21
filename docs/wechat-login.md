@@ -15,7 +15,7 @@ npm run build:wechat
 
 构建完成后，在微信开发者工具导入 **`apps/miniapp/dist/wechat/mp-weixin`**。微信版本登录页只有“微信登录”；`dist/build/mp-weixin` 与 `dist/dev/mp-weixin` 仍是五人演示版本。构建时的模式与地址来自 `apps/miniapp/.env.wechat`，可用已被忽略的 `.env.wechat.local` 覆盖，修改后重新构建。
 
-本机 API 为 `http://127.0.0.1:3003`，数据在 `apps/api/data/gatherflow-wechat.sqlite`。首次登录创建默认昵称“微信朋友 …”，重新登录复用同一 AppID 下的身份。当前没有微信昵称授权、昵称编辑或演示数据迁入功能。
+当前完整版本已切换到 AppID `wx38429eb9e4b61620`。本机 API 为 `http://127.0.0.1:3003`，新账号数据在 `apps/api/data/gatherflow-wechat-wx38429eb9e4b61620.sqlite`；原账号数据库保留，不自动合并。首次登录创建默认昵称“微信朋友 …”，重新登录复用同一 AppID 下的身份。当前没有微信昵称授权、昵称编辑或演示数据迁入功能。
 
 编译 API 后也可运行 `npm run start:wechat -w @gatherflow/api`。修改服务端本地环境文件后应重新启动 API。
 
@@ -49,6 +49,8 @@ npm run wechat:login-test
 若通过 CLI `auto --auto-port 9423` 启动了项目，可再设置 `$env:WECHAT_WS_ENDPOINT = 'ws://127.0.0.1:9423'`。脚本触发真实登录按钮两次，验证用户相同、会话模式、首页回跳以及使用会话读取活动列表返回 200。默认鉴权检查地址为本机 3003。截图和脱敏结果写入 `output/wechat-login/`；不输出 code、令牌或密钥。
 
 ## 真机准备与剩余验收
+
+新 AppID 的 iPhone 局域网登录已经由用户手动确认。无需云资源的同 Wi-Fi 启动方式、配置文件和本次范围见 [局域网完整试用说明](lan-trial.md)。
 
 手机上的 `127.0.0.1` 指向手机。局域网调试时，在服务端本地配置将 HOST 设为电脑可访问的网卡地址或 `0.0.0.0`，在前端 `apps/miniapp/.env.wechat.local` 设置 `VITE_API_BASE_URL=http://电脑局域网地址:3003`，重启 API 并重新构建。手机与电脑应在同一可互通网络；先用手机浏览器打开 `/health` 验证连通性。按本机防火墙的实际规则处理入站访问。仓库默认仍只监听本机。
 

@@ -49,13 +49,16 @@ async function main() {
     }
     assert.equal(ids[0], ids[1], 'Re-login retains the same app-scoped user');
     const status = (await bounded(
-      mini.evaluate(`() => new Promise((resolve, reject) => {
+      mini.evaluate(
+        `base => new Promise((resolve, reject) => {
       const session = wx.getStorageSync('gatherflow.session');
-      wx.request({url: 'http://127.0.0.1:3003/activities',
+      wx.request({url: base + '/activities',
         header: {Authorization: 'Bearer ' + session.token}, timeout: 12000,
         success: response => resolve({status: response.statusCode, isList: Array.isArray(response.data)}),
         fail: () => reject(new Error('Authenticated API request failed'))});
-    })`),
+    })`,
+        process.env.WECHAT_API_BASE_URL ?? 'http://127.0.0.1:3003',
+      ),
       'authenticated API',
     )) as { status: number; isList: boolean };
     assert.deepEqual(status, { status: 200, isList: true });

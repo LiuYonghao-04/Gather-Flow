@@ -14,7 +14,7 @@ npm run wechat:showcase-test
 
 在微信开发者工具导入 `apps/miniapp/dist/showcase/mp-weixin`。修改产物后做一次完整编译（Ctrl+B）；遇到开发者工具索引异常时清理编译缓存后重新编译。已有自动化连接可使用 `WECHAT_WS_ENDPOINT=ws://127.0.0.1:9424`。
 
-构建脚本在被忽略的 `output/showcase-source` 准备源码副本，使用展示专用 App 入口，将新 AppID 同时写入副本的 manifest 和 project 配置，只注册档案、指南两个页面。源代码中的普通演示和微信身份构建配置仍用于原开发环境。展示版不初始化身份、不迁移会话，不显示演示操作、微信登录、创建或个人活动入口；不需要 AppSecret 或公网 API。
+构建脚本在被忽略的 `output/showcase-source` 准备源码副本，使用展示专用 App 入口，将 AppID 同时写入副本的 manifest 和 project 配置，只注册档案、指南两个页面。普通开发和微信完整构建使用原有的完整页面清单。展示版不初始化身份、不迁移会话，不显示演示操作、微信登录、创建或个人活动入口；不需要 AppSecret 或公网 API。
 
 ## 在新账号后台设置体验版
 

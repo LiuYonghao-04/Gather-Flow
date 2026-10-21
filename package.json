@@ -14,6 +14,7 @@
     "dev": "concurrently -n API,WECHAT -c green,cyan \"npm:dev:api\" \"npm:dev:mp-weixin\"",
     "dev:api": "npm run dev -w @gatherflow/api",
     "dev:wechat-api": "npm run dev:wechat -w @gatherflow/api",
+    "dev:lan": "concurrently -n DEMO,WECHAT -c green,cyan \"npm run dev:lan -w @gatherflow/api\" \"npm run dev:wechat-lan -w @gatherflow/api\"",
     "build:wechat": "npm run build:wechat -w @gatherflow/miniapp",
     "build:showcase": "tsx scripts/build-showcase.ts",
     "dev:mp-weixin": "npm run dev:mp-weixin -w @gatherflow/miniapp",

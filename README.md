@@ -17,7 +17,7 @@ npm run dev
 
 `npm run dev` 同时启动本地 API（`http://127.0.0.1:3001`）和微信开发编译，随后持续监听文件变更。首次启动 API 也会自动迁移并幂等填充演示用户，不会清空已有活动。
 
-在微信开发者工具中导入 **`apps/miniapp/dist/dev/mp-weixin`**，不要导入仓库根目录。已配置项目提供的 AppID `wxf6db22d44eb01228`，并显式固定小程序根目录与已验证基础库 3.17.4。更换 AppID 时同步修改 `src/manifest.json` 与 `src/project.config.json`。电脑上开发者工具访问本地 HTTP API，需要开启“不校验合法域名”调试选项。
+在微信开发者工具中导入 **`apps/miniapp/dist/dev/mp-weixin`**，不要导入仓库根目录。已配置当前项目的 AppID `wx38429eb9e4b61620`，并显式固定小程序根目录与已验证基础库 3.17.4。更换 AppID 时同步修改 `src/manifest.json` 与 `src/project.config.json`。电脑上开发者工具访问本地 HTTP API，需要开启“不校验合法域名”调试选项。
 
 稳定演示可先运行 `npm run build:mp-weixin`，导入 **`apps/miniapp/dist/build/mp-weixin`**。模拟器事件回归已通过真实按钮绑定与原生确认弹窗，运行 `npm run wechat:test` 可复测。真机无法用 `127.0.0.1` 访问电脑；局域网调试需另配电脑地址和网络，跨互联网需要可访问的 HTTPS 后端及微信合法域名。故障处理及截图命令见 [微信演示说明](docs/wechat-demo.md)。
 
@@ -34,6 +34,8 @@ npm run dev:h5
 微信身份版本的首页、登录页和“我的”均可打开原五人演示档案。档案页点击“进入演示操作”，即可切换 A–E 身份使用原来的演示数据库；顶部“返回微信活动”恢复之前的微信登录。首次首页提供四步新人指南，之后可随时从“我的”重新查看。操作演示时保持 3001 演示 API 与 3003 微信 API 同时运行，详见 [入口、运行和身份隔离说明](docs/demo-onboarding.md)。
 
 给朋友扫码观看的独立展示版使用新 AppID `wx38429eb9e4b61620`。运行 `npm run build:showcase`，导入 `apps/miniapp/dist/showcase/mp-weixin`，包含五人档案和指南两个页面，无需登录与后端。上传后在新账号后台设为体验版，步骤见 [展示体验版说明](docs/showcase-release.md)。
+
+同一 Wi-Fi 下可试用包含微信登录的完整版本：配置本地局域网地址，运行 `npm run dev:lan` 和 `npm run build:wechat`，打开 `dist/wechat/mp-weixin` 后用「预览」扫码。新 AppID 已通过 iPhone 局域网访问和真实登录，操作见 [局域网完整试用说明](docs/lan-trial.md)。
 
 ## 演示账户与流程
 
