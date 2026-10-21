@@ -15,6 +15,9 @@ beforeEach(() => {
     downloadFile,
     previewImage,
     getStorageSync: () => cached,
+    setStorageSync: (_key: string, value: unknown) => {
+      cached = value;
+    },
     removeStorageSync: () => {
       cached = null;
     },

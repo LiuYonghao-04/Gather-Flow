@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DemoModeBanner from '@/components/DemoModeBanner.vue';
 import { ref } from 'vue';
 import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import type { ActivityDetail, JoinApplication } from '@gatherflow/shared';
@@ -63,6 +64,7 @@ function review(application: JoinApplication, decision: 'APPROVED' | 'REJECTED')
 </script>
 <template>
   <view class="page">
+    <DemoModeBanner id="environment-banner" />
     <GfState v-if="loading || error" :loading="loading" :error="error" @retry="reload" />
     <template v-else-if="data">
       <view class="header"

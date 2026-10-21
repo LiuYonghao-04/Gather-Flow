@@ -1,0 +1,461 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "activityId": "c35b9078-ccf4-4575-a077-4d6ad859bc11",
+    "capturedAt": "2026-10-21T05:11:15.362Z",
+    "archivedAt": "2026-10-21T04:52:21.710Z"
+  },
+  "activity": {
+    "name": "山野三日 · M2/M3 演示",
+    "description": "五位朋友一起商量、分工、留存虚构凭证，再把每一笔钱记清楚。所有内容均为演示数据。",
+    "totalCents": 86800
+  },
+  "members": [
+    {
+      "id": "A",
+      "name": "林间",
+      "color": "#537461",
+      "tagline": "想把大家聚在一起"
+    },
+    {
+      "id": "B",
+      "name": "陈屿",
+      "color": "#9A745C",
+      "tagline": "本地向导，随时待命"
+    },
+    {
+      "id": "C",
+      "name": "许知夏",
+      "color": "#758273",
+      "tagline": "偏爱慢一点的旅行"
+    },
+    {
+      "id": "D",
+      "name": "周予安",
+      "color": "#78889B",
+      "tagline": "带上相机和好心情"
+    },
+    {
+      "id": "E",
+      "name": "沈念",
+      "color": "#A1787A",
+      "tagline": "负责发现好吃的"
+    }
+  ],
+  "proposals": [
+    {
+      "content": {
+        "title": "老街午餐，再慢慢回家",
+        "description": "这是一份虚构的三日行程。",
+        "category": "MEAL",
+        "location": "山野小镇",
+        "date": "2026-10-26",
+        "startTime": "12:00",
+        "endTime": "13:00",
+        "budgetCents": null,
+        "needsBooking": false
+      },
+      "status": "CONFIRMED",
+      "execution": "CONFIRMED",
+      "participantIds": ["A", "B", "C", "D"],
+      "responses": [
+        {
+          "userId": "A",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "B",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "C",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "D",
+          "response": "CONFIRM",
+          "reason": ""
+        }
+      ],
+      "preferences": [],
+      "comments": []
+    },
+    {
+      "content": {
+        "title": "山间茶屋的小聚",
+        "description": "这是一份虚构的三日行程。",
+        "category": "MEAL",
+        "location": "山野小镇",
+        "date": "2026-10-25",
+        "startTime": "12:00",
+        "endTime": "13:00",
+        "budgetCents": null,
+        "needsBooking": false
+      },
+      "status": "CONFIRMED",
+      "execution": "CONFIRMED",
+      "participantIds": ["A", "B", "C", "D"],
+      "responses": [
+        {
+          "userId": "A",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "B",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "C",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "D",
+          "response": "CONFIRM",
+          "reason": ""
+        }
+      ],
+      "preferences": [],
+      "comments": []
+    },
+    {
+      "content": {
+        "title": "溪谷散步 · 请核对抵达时间",
+        "description": "这是一份虚构的三日行程。",
+        "category": "ACTIVITY",
+        "location": "溪谷步道",
+        "date": "2026-10-24",
+        "startTime": "12:00",
+        "endTime": "13:00",
+        "budgetCents": null,
+        "needsBooking": false
+      },
+      "status": "CONFIRMED",
+      "execution": "CONFIRMED",
+      "participantIds": ["A", "B", "C", "D"],
+      "responses": [
+        {
+          "userId": "A",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "B",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "C",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "D",
+          "response": "CONFIRM",
+          "reason": ""
+        }
+      ],
+      "preferences": [],
+      "comments": []
+    },
+    {
+      "content": {
+        "title": "去程高铁 · 14:00 抵达",
+        "description": "虚构车次与订单，费用由四位乘车人承担。",
+        "category": "TRANSPORT",
+        "location": "山城站",
+        "date": "2026-10-24",
+        "startTime": "10:00",
+        "endTime": "14:00",
+        "budgetCents": 80000,
+        "needsBooking": true
+      },
+      "status": "CONFIRMED",
+      "execution": "BOOKED",
+      "participantIds": ["A", "C", "D", "E"],
+      "responses": [
+        {
+          "userId": "A",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "C",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "D",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "E",
+          "response": "CONFIRM",
+          "reason": ""
+        }
+      ],
+      "preferences": [],
+      "comments": []
+    },
+    {
+      "content": {
+        "title": "周六出发，在山里住两晚",
+        "description": "周六早上出发，周一午饭后返回。来不了这次也没关系，下次再约。",
+        "category": "DATE",
+        "location": "",
+        "date": "2026-10-24",
+        "startTime": null,
+        "endTime": null,
+        "budgetCents": null,
+        "needsBooking": false
+      },
+      "status": "CONFIRMED",
+      "execution": "CONFIRMED",
+      "participantIds": ["A", "B", "C", "D", "E"],
+      "responses": [
+        {
+          "userId": "A",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "B",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "C",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "D",
+          "response": "CONFIRM",
+          "reason": ""
+        },
+        {
+          "userId": "E",
+          "response": "OPT_OUT",
+          "reason": ""
+        }
+      ],
+      "preferences": [
+        {
+          "userId": "E",
+          "kind": "ONLY",
+          "note": "我只有周日有空，周六需要值班。"
+        }
+      ],
+      "comments": [
+        {
+          "authorId": "B",
+          "body": "这次先按周六安排，下次我们一起留个完整周末。"
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "title": "三日慢游路线",
+      "content": "第一天溪谷散步，第二天山间茶屋，第三天老街午餐。",
+      "completed": false,
+      "assigneeIds": ["D"],
+      "handovers": [
+        {
+          "fromUserId": "C",
+          "toUserId": "D",
+          "note": "路线已初拟，请你确认开放时间并接着安排。",
+          "status": "ACCEPTED"
+        }
+      ],
+      "suggestions": [
+        {
+          "authorId": "B",
+          "body": "第一天先核对到站时间，不要来不及。",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "title": "去程高铁票",
+      "content": "四人同车：A / C / D / E，B 在当地等大家。预计 14:00 抵达。",
+      "completed": true,
+      "assigneeIds": ["A"],
+      "handovers": [],
+      "suggestions": []
+    }
+  ],
+  "expenses": [
+    {
+      "description": "待核对的停车费",
+      "date": "2026-10-24",
+      "totalCents": 2000,
+      "payerId": "D",
+      "recorderId": "D",
+      "splitMode": "EQUAL",
+      "shares": [
+        {
+          "userId": "A",
+          "amountCents": 1000
+        },
+        {
+          "userId": "D",
+          "amountCents": 1000
+        }
+      ],
+      "status": "CONFIRMED",
+      "confirmations": [
+        {
+          "userId": "A",
+          "createdAt": "2026-10-21T04:51:57.445Z"
+        }
+      ],
+      "disputes": [],
+      "evidenceCaptions": []
+    },
+    {
+      "description": "三人的路上饮料",
+      "date": "2026-10-24",
+      "totalCents": 4800,
+      "payerId": "A",
+      "recorderId": "A",
+      "splitMode": "CUSTOM",
+      "shares": [
+        {
+          "userId": "A",
+          "amountCents": 2000
+        },
+        {
+          "userId": "B",
+          "amountCents": 1500
+        },
+        {
+          "userId": "C",
+          "amountCents": 1300
+        }
+      ],
+      "status": "CONFIRMED",
+      "confirmations": [
+        {
+          "userId": "B",
+          "createdAt": "2026-10-21T04:51:45.904Z"
+        }
+      ],
+      "disputes": [
+        {
+          "userId": "C",
+          "reason": "先核对饮料单价，已在线下沟通。",
+          "withdrawnAt": "2026-10-21T04:51:45.921Z"
+        }
+      ],
+      "evidenceCaptions": []
+    },
+    {
+      "description": "四人去程高铁票",
+      "date": "2026-10-24",
+      "totalCents": 80000,
+      "payerId": "A",
+      "recorderId": "A",
+      "splitMode": "EQUAL",
+      "shares": [
+        {
+          "userId": "A",
+          "amountCents": 20000
+        },
+        {
+          "userId": "C",
+          "amountCents": 20000
+        },
+        {
+          "userId": "D",
+          "amountCents": 20000
+        },
+        {
+          "userId": "E",
+          "amountCents": 20000
+        }
+      ],
+      "status": "CONFIRMED",
+      "confirmations": [
+        {
+          "userId": "C",
+          "createdAt": "2026-10-21T04:51:45.898Z"
+        }
+      ],
+      "disputes": [],
+      "evidenceCaptions": ["纯色演示凭证 · 无真实订单或个人信息"]
+    }
+  ],
+  "balances": [
+    {
+      "userId": "A",
+      "amountCents": 61800
+    },
+    {
+      "userId": "B",
+      "amountCents": -1500
+    },
+    {
+      "userId": "C",
+      "amountCents": -21300
+    },
+    {
+      "userId": "D",
+      "amountCents": -19000
+    },
+    {
+      "userId": "E",
+      "amountCents": -20000
+    }
+  ],
+  "transfers": [
+    {
+      "fromUserId": "C",
+      "toUserId": "A",
+      "amountCents": 21300,
+      "receivedAt": "2026-10-21T04:52:18.897Z"
+    },
+    {
+      "fromUserId": "E",
+      "toUserId": "A",
+      "amountCents": 20000,
+      "receivedAt": "2026-10-21T04:52:19.611Z"
+    },
+    {
+      "fromUserId": "D",
+      "toUserId": "A",
+      "amountCents": 19000,
+      "receivedAt": "2026-10-21T04:52:20.310Z"
+    },
+    {
+      "fromUserId": "B",
+      "toUserId": "A",
+      "amountCents": 1500,
+      "receivedAt": "2026-10-21T04:52:21.003Z"
+    }
+  ],
+  "settlementHistory": [
+    {
+      "sequence": 2,
+      "totalCents": 86800,
+      "reopened": false
+    },
+    {
+      "sequence": 1,
+      "totalCents": 86800,
+      "reopened": true
+    }
+  ],
+  "evidence": [
+    {
+      "caption": "纯色演示凭证 · 无真实订单或个人信息",
+      "uploaderId": "A"
+    }
+  ]
+}

@@ -14,8 +14,13 @@ function home() {
     <button class="new-activity" aria-label="发起新活动" @tap="go('/pages/create/index')">
       <GfIcon name="plus" />
     </button>
-    <button class="nav-item" :class="{ selected: active === 'me' }" @tap="go('/pages/login/index')">
-      <GfIcon name="people" /><text>我的身份</text>
+    <button
+      id="nav-me"
+      class="nav-item"
+      :class="{ selected: active === 'me' }"
+      @tap="go('/pages/me/index')"
+    >
+      <GfIcon name="people" /><text>我的</text>
     </button>
   </view>
 </template>

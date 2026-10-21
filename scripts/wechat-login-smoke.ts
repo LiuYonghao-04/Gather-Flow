@@ -23,7 +23,11 @@ async function main() {
         0,
         'Real mode must hide demo identities',
       );
-      await driver.tap({ selector: '.btn', marker: 'class="btn ', wxml: 'pages/login/index' });
+      await driver.tap({
+        selector: '#wechat-login',
+        marker: 'id="wechat-login"',
+        wxml: 'pages/login/index',
+      });
       await until(
         async () => (await mini.currentPage())?.path === 'pages/index/index',
         'real WeChat login redirects to home',

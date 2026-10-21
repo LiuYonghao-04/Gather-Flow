@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DemoModeBanner from '@/components/DemoModeBanner.vue';
 import { ref } from 'vue';
 import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import {
@@ -44,6 +45,7 @@ onPullDownRefresh(async () => {
 </script>
 <template>
   <view class="page">
+    <DemoModeBanner id="environment-banner" />
     <GfState v-if="loading || error" :loading="loading" :error="error" @retry="reload" />
     <button v-if="error" class="btn secondary" @tap="goHome">回到我的活动</button>
     <template v-else-if="activity">

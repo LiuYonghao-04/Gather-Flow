@@ -1,14 +1,34 @@
 import type { ApiErrorBody, Session } from '@gatherflow/shared';
+import {
+  isCurrentContext,
+  primaryMode,
+  primaryBaseUrl,
+  requestContext,
+  type RequestContext,
+} from './environment';
+export { isDemo } from './environment';
 
-export const isDemo = (import.meta.env.VITE_APP_MODE ?? 'demo') === 'demo';
-export const baseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:3001').replace(
-  /\/$/,
-  '',
-);
-const sessionKey = 'gatherflow.session';
+const legacyKey = 'gatherflow.session';
+function cachedSession(context: RequestContext): unknown {
+  let value: unknown = uni.getStorageSync(context.sessionKey);
+  // Migrate the former single session only to the build's original environment.
+  // null is an intentional cleared slot, and must never resurrect the legacy copy.
+  if (
+    (value === '' || value === undefined) &&
+    context.mode === primaryMode &&
+    context.baseUrl === primaryBaseUrl
+  ) {
+    const legacy: unknown = uni.getStorageSync(legacyKey);
+    if (legacy && typeof legacy === 'object' && 'mode' in legacy && legacy.mode === context.mode) {
+      value = legacy;
+      uni.setStorageSync(context.sessionKey, legacy);
+    }
+  }
+  return value;
+}
 
-export function storedSession(): Session | null {
-  const value: unknown = uni.getStorageSync(sessionKey);
+export function storedSession(context = requestContext()): Session | null {
+  const value = cachedSession(context);
   if (
     !value ||
     typeof value !== 'object' ||
@@ -24,23 +44,29 @@ export function storedSession(): Session | null {
     !/^[a-f0-9]{64}$/.test(session.token) ||
     !Number.isFinite(Date.parse(session.expiresAt)) ||
     Date.parse(session.expiresAt) <= Date.now() ||
-    session.mode !== (isDemo ? 'demo' : 'wechat')
+    session.mode !== context.mode
   )
     return null;
   return session;
 }
-export function persistSession(value: Session | null): void {
-  if (value) uni.setStorageSync(sessionKey, value);
-  else uni.removeStorageSync(sessionKey);
+export function persistSession(value: Session | null, context = requestContext()): void {
+  if (value && value.mode !== context.mode) throw new Error('登录身份与当前空间不一致，请重新登录');
+  uni.setStorageSync(context.sessionKey, value);
+  // Keep a compatibility mirror for existing installations and diagnostics.
+  // Authorization always reads the environment-specific slot above.
+  if (isCurrentContext(context)) {
+    if (value) uni.setStorageSync(legacyKey, value);
+    else uni.removeStorageSync(legacyKey);
+  }
 }
-export function expireSession(requestToken: string | undefined): void {
+export function expireSession(requestToken: string | undefined, context = requestContext()): void {
   // A delayed response from an old identity must not erase a new login.
-  const cached: unknown = uni.getStorageSync(sessionKey);
+  const cached = cachedSession(context);
   const cachedToken =
     cached && typeof cached === 'object' && 'token' in cached ? cached.token : undefined;
-  if (requestToken ? cachedToken !== requestToken : storedSession() !== null) return;
-  persistSession(null);
-  uni.$emit('session-expired');
+  if (requestToken ? cachedToken !== requestToken : storedSession(context) !== null) return;
+  persistSession(null, context);
+  if (isCurrentContext(context)) uni.$emit('session-expired');
 }
 export function returnToLogin(): void {
   const pages = getCurrentPages();
@@ -64,10 +90,11 @@ export class ApiError extends Error {
   }
 }
 export function api<T>(path: string, method: 'GET' | 'POST' = 'GET', data?: object): Promise<T> {
-  const session = storedSession();
+  const context = requestContext();
+  const session = storedSession(context);
   return new Promise((resolve, reject) => {
     uni.request({
-      url: `${baseUrl}${path}`,
+      url: `${context.baseUrl}${path}`,
       method,
       data,
       timeout: 12000,
@@ -77,11 +104,15 @@ export function api<T>(path: string, method: 'GET' | 'POST' = 'GET', data?: obje
       },
       success(response) {
         if (response.statusCode >= 200 && response.statusCode < 300) {
+          if (!isCurrentContext(context)) {
+            reject(new ApiError('CONTEXT_CHANGED', '空间已切换，请在当前页面继续'));
+            return;
+          }
           resolve(response.data as T);
           return;
         }
         if (response.statusCode === 401) {
-          expireSession(session?.token);
+          expireSession(session?.token, context);
         }
         const body = response.data as Partial<ApiErrorBody>;
         reject(

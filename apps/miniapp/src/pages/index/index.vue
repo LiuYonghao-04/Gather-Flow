@@ -1,14 +1,17 @@
 <script setup lang="ts">
+import DemoModeBanner from '@/components/DemoModeBanner.vue';
 import { computed, ref } from 'vue';
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { activityTypeLabels, type Activity } from '@gatherflow/shared';
-import { api, go, isDemo, loginPath, requireSession } from '@/services/api';
+import { api, go, isDemo, requireSession } from '@/services/api';
 import { useRemote } from '@/composables/useRemote';
 import { useSessionStore } from '@/stores/session';
 import GfAvatar from '@/components/GfAvatar.vue';
 import GfIcon from '@/components/GfIcon.vue';
 import GfNav from '@/components/GfNav.vue';
 import GfState from '@/components/GfState.vue';
+import WelcomeGuide from '@/components/WelcomeGuide.vue';
+import DemoEntry from '@/components/DemoEntry.vue';
 
 const session = useSessionStore();
 const {
@@ -62,14 +65,15 @@ function openInvitation() {
 
 <template>
   <view class="page with-nav">
+    <DemoModeBanner id="environment-banner" />
     <view class="row between topbar"
       ><view class="row gap wordmark"
         ><view class="brand-icon"><GfIcon name="leaf" /></view><text>GatherFlow</text></view
       ><button
         v-if="session.user"
         class="profile-button"
-        aria-label="切换我的身份"
-        @tap="go(loginPath())"
+        aria-label="打开我的"
+        @tap="go('/pages/me/index')"
       >
         <GfAvatar :user="session.user" small /></button
     ></view>
@@ -80,6 +84,7 @@ function openInvitation() {
       ><text class="title">{{ session.user?.name + '，\n下次相聚，一起安排。' }}</text
       ><text class="muted greeting-note">不必一个人做好所有计划。</text></view
     >
+    <WelcomeGuide id="welcome-panel" />
     <view class="hero" @tap="go('/pages/create/index')">
       <view class="hero-copy"
         ><text class="hero-overline">留点时间 · 给朋友</text
@@ -92,6 +97,7 @@ function openInvitation() {
           class="little-tree tree-one" /><view class="little-tree tree-two"
       /></view>
     </view>
+    <DemoEntry id="demo-entry-panel" />
     <view class="section-heading"
       ><view class="row gap"
         ><text class="subtitle">我们的活动</text

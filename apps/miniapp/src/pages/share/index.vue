@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import DemoModeBanner from '@/components/DemoModeBanner.vue';
 import { computed, ref } from 'vue';
 import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app';
 import type { ActivityDetail, Invite } from '@gatherflow/shared';
 import { api, errorMessage, go, requireSession, storedSession } from '@/services/api';
+import { canReturnToWechat } from '@/services/environment';
 import GfIcon from '@/components/GfIcon.vue';
 import GfState from '@/components/GfState.vue';
 
@@ -53,6 +55,8 @@ function copy() {
   });
 }
 onShareAppMessage(() => {
+  if (canReturnToWechat.value)
+    return { title: '五个人，怎样一起完成一场相聚', path: '/pages/demo/index' };
   const current = card.value;
   if (!current) return { title: 'GatherFlow · 相聚有商量', path: '/pages/index/index' };
   const shared = { title: `一起参加「${activity.value?.name ?? '朋友相聚'}」`, path: current.path };
@@ -64,6 +68,7 @@ onShareAppMessage(() => {
 </script>
 <template>
   <view class="page">
+    <DemoModeBanner id="environment-banner" />
     <view class="header"
       ><text class="eyebrow">SAVE A PLACE FOR A FRIEND</text
       ><text class="title">给朋友，留个位置。</text
@@ -92,10 +97,19 @@ onShareAppMessage(() => {
           : '成员分享的邀请始终需要房主同意。朋友加入前，只能看到活动名称和类型。'
       }}</view>
       <!-- #ifdef MP-WEIXIN -->
-      <button class="btn" open-type="share" :disabled="busy || !card" :loading="busy">
+      <button
+        v-if="!canReturnToWechat"
+        class="btn"
+        open-type="share"
+        :disabled="busy || !card"
+        :loading="busy"
+      >
         {{ busy ? '正在准备邀请…' : '分享给微信朋友' }}
       </button>
       <!-- #endif -->
+      <view v-if="canReturnToWechat" class="notice space-top"
+        >演示邀请请通过“复制这张邀请”与切换身份来体验。邀请真实朋友，请先返回微信活动；此处菜单分享仅展示只读演示档案。</view
+      >
       <button class="btn secondary copy-btn" :disabled="busy || !card" @tap="copy">
         复制这张邀请
       </button>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DemoModeBanner from '@/components/DemoModeBanner.vue';
 import { ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import {
@@ -42,6 +43,7 @@ async function submit() {
 </script>
 <template>
   <view class="page">
+    <DemoModeBanner id="environment-banner" />
     <view class="header"
       ><text class="eyebrow">A LITTLE PLAN, TOGETHER</text
       ><text class="title">相聚，先有个念头。</text
@@ -50,6 +52,7 @@ async function submit() {
     <view class="field"
       ><text class="label">活动叫什么？</text
       ><input
+        id="create-name"
         v-model="name"
         class="input"
         placeholder="比如：把周末留给山野"
@@ -85,7 +88,13 @@ async function submit() {
       ></view
     >
     <text v-if="error" class="error">{{ error }}</text>
-    <button class="btn create-btn" :disabled="busy" :loading="busy" @tap="submit">
+    <button
+      id="create-submit"
+      class="btn create-btn"
+      :disabled="busy"
+      :loading="busy"
+      @tap="submit"
+    >
       {{ busy ? '正在创建…' : '发起这次相聚' }}<GfIcon v-if="!busy" name="arrow" />
     </button>
   </view>

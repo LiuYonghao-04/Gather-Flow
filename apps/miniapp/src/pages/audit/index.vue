@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DemoModeBanner from '@/components/DemoModeBanner.vue';
 import { ref } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
 import {
@@ -129,6 +130,7 @@ async function loadMore() {
 </script>
 <template>
   <view class="page">
+    <DemoModeBanner id="environment-banner" />
     <view class="header"
       ><text class="eyebrow">EVERY LITTLE STEP</text><text class="title">相聚的足迹</text
       ><text class="muted">谁在什么时候做了什么，大家都能看见。</text></view

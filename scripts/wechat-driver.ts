@@ -121,6 +121,8 @@ export class WechatDriver {
   }) {
     const { selector, marker, component = '', rowValue = '' } = options;
     await this.waitNode(selector, component);
+    // The app-service route can change before the native page transition finishes.
+    await new Promise((done) => setTimeout(done, 400));
     const source = await readFile(resolve(wechatProject, options.wxml + '.wxml'), 'utf8');
     const tags = [...source.matchAll(/<button\b[^>]*>/g)]
       .map((match) => match[0])
@@ -168,6 +170,31 @@ export class WechatDriver {
     // Native.confirmModal acknowledges the real simulator dialog; no mockWxMethod.
     await new Promise((done) => setTimeout(done, 400));
     await bounded(this.mini.native().confirmModal(), 'native confirmation');
+  }
+
+  async fill(selector: string, marker: string, wxml: string, value: string) {
+    await this.waitNode(selector);
+    const source = await readFile(resolve(wechatProject, wxml + '.wxml'), 'utf8');
+    const tags = [...source.matchAll(/<(?:input|textarea)\b[^>]*>/g)]
+      .map((match) => match[0])
+      .filter((tag) => tag.includes(marker));
+    assert.equal(tags.length, 1, `Unique compiled input: ${marker}`);
+    const key = tags[0]!.match(/bindinput="{{(\w+)}}"/)?.[1];
+    assert.ok(key, `Input binding missing for ${marker}`);
+    await bounded(
+      this.mini.evaluate(
+        `(key, value) => {
+      const page = getCurrentPages().slice(-1)[0];
+      const handler = page.data[key];
+      if (typeof page[handler] !== 'function') throw new Error('Rendered input handler missing');
+      page[handler]({type: 'input', detail: {value}, target: {dataset: {}}, currentTarget: {dataset: {}}, timeStamp: Date.now()});
+      return true;
+    }`,
+        key,
+        value,
+      ),
+      'input event',
+    );
   }
 
   async login(user: 'A' | 'B', returnTo: string) {

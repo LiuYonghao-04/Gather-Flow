@@ -1,5 +1,6 @@
 import type { Evidence, ApiErrorBody } from '@gatherflow/shared';
-import { baseUrl, storedSession, ApiError, expireSession } from './api';
+import { storedSession, ApiError, expireSession } from './api';
+import { isCurrentContext, requestContext } from './environment';
 
 export function choosePhoto(): Promise<string | null> {
   return new Promise((resolve, reject) =>
@@ -20,18 +21,23 @@ export function uploadPhoto(
   filePath: string,
   formData: Record<string, string>,
 ): Promise<Evidence> {
-  const token = storedSession()?.token;
+  const context = requestContext();
+  const token = storedSession(context)?.token;
   return new Promise((resolve, reject) =>
     uni.uploadFile({
-      url: `${baseUrl}/activities/${activityId}/evidence`,
+      url: `${context.baseUrl}/activities/${activityId}/evidence`,
       filePath,
       name: 'image',
       formData,
       header: { Authorization: `Bearer ${token ?? ''}` },
       timeout: 60000,
       success: (response) => {
+        if (!isCurrentContext(context)) {
+          reject(new ApiError('CONTEXT_CHANGED', '空间已切换，请在当前页面继续'));
+          return;
+        }
         if (response.statusCode === 401) {
-          expireSession(token);
+          expireSession(token, context);
         }
         try {
           const body: unknown = JSON.parse(response.data);
@@ -54,15 +60,20 @@ export function uploadPhoto(
   );
 }
 export async function previewEvidence(activityId: string, evidenceId: string): Promise<void> {
-  const token = storedSession()?.token;
+  const context = requestContext();
+  const token = storedSession(context)?.token;
   const path = await new Promise<string>((resolve, reject) =>
     uni.downloadFile({
-      url: `${baseUrl}/activities/${activityId}/evidence/${evidenceId}/image`,
+      url: `${context.baseUrl}/activities/${activityId}/evidence/${evidenceId}/image`,
       header: { Authorization: `Bearer ${token ?? ''}` },
       timeout: 30000,
       success: (r) => {
+        if (!isCurrentContext(context)) {
+          reject(new ApiError('CONTEXT_CHANGED', '空间已切换，请在当前页面继续'));
+          return;
+        }
         if (r.statusCode === 401) {
-          expireSession(token);
+          expireSession(token, context);
         }
         if (r.statusCode === 200) resolve(r.tempFilePath);
         else reject(new Error('无法查看凭证，请确认当前身份仍是活动成员'));
@@ -70,6 +81,8 @@ export async function previewEvidence(activityId: string, evidenceId: string): P
       fail: () => reject(new Error('图片加载失败，请重试')),
     }),
   );
+  if (!isCurrentContext(context))
+    throw new ApiError('CONTEXT_CHANGED', '空间已切换，请在当前页面继续');
   await new Promise<void>((resolve, reject) =>
     uni.previewImage({
       urls: [path],

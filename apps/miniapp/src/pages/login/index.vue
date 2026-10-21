@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import DemoModeBanner from '@/components/DemoModeBanner.vue';
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import type { User } from '@gatherflow/shared';
-import { api, isDemo, showError } from '@/services/api';
+import { api, go, isDemo, showError } from '@/services/api';
+import DemoEntry from '@/components/DemoEntry.vue';
+import { isCurrentContext, requestContext } from '@/services/environment';
 import { useSessionStore } from '@/stores/session';
 import { useRemote } from '@/composables/useRemote';
 import GfAvatar from '@/components/GfAvatar.vue';
@@ -28,7 +31,7 @@ onLoad((options) => {
       /* Keep the safe local default. */
     }
   }
-  if (isDemo) void reload();
+  if (isDemo.value) void reload();
 });
 async function select(user: User) {
   if (busy.value) return;
@@ -44,6 +47,7 @@ async function select(user: User) {
 }
 function wechatLogin() {
   if (busy.value) return;
+  const context = requestContext();
   // #ifdef MP-WEIXIN
   busy.value = 'wechat';
   uni.login({
@@ -51,6 +55,7 @@ function wechatLogin() {
     timeout: 8000,
     success: async ({ code }) => {
       try {
+        if (!isCurrentContext(context)) return;
         if (!code) throw new Error('没有取得微信登录凭证，请重新尝试');
         await session.loginWechat(code);
         uni.reLaunch({ url: returnTo });
@@ -74,6 +79,7 @@ function wechatLogin() {
 
 <template>
   <view class="page login-page">
+    <DemoModeBanner id="environment-banner" />
     <view class="brand-mark"><GfIcon name="leaf" /></view>
     <text class="eyebrow">GATHERFLOW · 相聚有商量</text>
     <view class="header"
@@ -113,10 +119,20 @@ function wechatLogin() {
       }}</text>
     </template>
     <template v-else
-      ><button class="btn" :disabled="!!busy" :loading="!!busy" @tap="wechatLogin">
+      ><button
+        id="wechat-login"
+        class="btn"
+        :disabled="!!busy"
+        :loading="!!busy"
+        @tap="wechatLogin"
+      >
         {{ busy ? '正在登录…' : '微信登录' }}</button
       ><text class="helper">登录后查看你参与的活动，一起商量下一次相聚。</text></template
     >
+    <button id="login-guide" class="btn text-btn" @tap="go('/pages/guide/index')">
+      第一次来？看看新手指南 ›
+    </button>
+    <DemoEntry id="demo-entry-panel" />
   </view>
 </template>
 

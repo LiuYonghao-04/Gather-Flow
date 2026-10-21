@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DemoModeBanner from '@/components/DemoModeBanner.vue';
 import { ref } from 'vue';
 import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { activityTypeLabels, type InvitePreview, type JoinResult } from '@gatherflow/shared';
@@ -66,6 +67,7 @@ async function accept() {
 </script>
 <template>
   <view class="page">
+    <DemoModeBanner id="environment-banner" />
     <GfState v-if="loading || error" :loading="loading" :error="error" @retry="reload" />
     <template v-else-if="preview">
       <view class="invite-leaf"><GfIcon name="leaf" /></view
