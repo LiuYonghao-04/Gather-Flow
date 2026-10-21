@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { onShareAppMessage } from '@dcloudio/uni-app';
+import { isShowcase } from '@/services/showcase';
 import { categoryLabels, formatMoney, responseLabels } from '@gatherflow/shared';
 import { formatTime, go, goHome } from '@/services/api';
 import snapshot from '@/content/demo-preview.json';
@@ -30,13 +32,21 @@ function back() {
   else goHome();
 }
 const execution = { PLANNED: '待安排', CONFIRMED: '已确定', BOOKED: '已预订', DONE: '已执行' };
+onShareAppMessage(() => ({
+  title: 'GatherFlow · 五个人，怎样一起完成一场相聚',
+  path: '/pages/demo/index',
+}));
 </script>
 <template>
   <view class="page demo-page">
-    <DemoModeBanner />
+    <DemoModeBanner v-if="!isShowcase" />
     <view class="row between"
-      ><button id="demo-back" class="back" @tap="back">‹ 返回</button
-      ><text class="tag neutral">演示档案 · 只读</text></view
+      ><button v-if="!isShowcase" id="demo-back" class="back" @tap="back">‹ 返回</button
+      ><button v-else id="showcase-guide" class="back" @tap="go('/pages/guide/index')">
+        新手指南 ›</button
+      ><text class="tag neutral">{{
+        isShowcase ? '展示体验版 · 只读' : '演示档案 · 只读'
+      }}</text></view
     >
     <view class="header demo-header"
       ><text class="eyebrow">先看一场，已经走完的相聚</text
@@ -62,7 +72,7 @@ const execution = { PLANNED: '待安排', CONFIRMED: '已确定', BOOKED: '已�
     <text class="snapshot-note"
       >保留于 {{ formatTime(demo.source.archivedAt) }} · 虚构演示，不会修改你的活动</text
     >
-    <DemoAccess id="demo-operation" />
+    <DemoAccess v-if="!isShowcase" id="demo-operation" />
     <view class="pill-tabs demo-tabs"
       ><button
         v-for="item in tabs"
@@ -235,10 +245,13 @@ const execution = { PLANNED: '待安排', CONFIRMED: '已确定', BOOKED: '已�
     <view class="demo-footer"
       ><button id="demo-guide" class="btn secondary" @tap="go('/pages/guide/index')">
         了解这几个步骤怎么用</button
-      ><button id="demo-home" class="btn text-btn" @tap="goHome">回到我的活动 ›</button
-      ><text class="footer-note"
-        >上方档案是无需联网的只读副本。进入演示操作后，才会连接原来的演示数据服务。</text
-      ></view
+      ><button v-if="!isShowcase" id="demo-home" class="btn text-btn" @tap="goHome">
+        回到我的活动 ›</button
+      ><text class="footer-note">{{
+        isShowcase
+          ? '这是无需登录、无需连接数据服务的展示体验版。所有人物与收支均为虚构演示；当前可查看档案和指南。'
+          : '上方档案是无需联网的只读副本。进入演示操作后，才会连接原来的演示数据服务。'
+      }}</text></view
     >
   </view>
 </template>

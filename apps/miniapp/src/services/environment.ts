@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue';
 import type { Session } from '@gatherflow/shared';
+import { isShowcase } from './showcase';
 
 type Mode = Session['mode'];
 export const primaryMode: Mode =
@@ -11,7 +12,7 @@ export const primaryBaseUrl = normalize(
 );
 const demoBaseUrl =
   primaryMode === 'demo' ? primaryBaseUrl : normalize(import.meta.env.VITE_DEMO_API_BASE_URL ?? '');
-export const demoAvailable = /^https?:\/\/[^\s]+$/.test(demoBaseUrl);
+export const demoAvailable = !isShowcase && /^https?:\/\/[^\s]+$/.test(demoBaseUrl);
 const workspace = ref<Mode>(primaryMode);
 const workspaceKey = 'gatherflow.workspace.' + primaryMode + '.' + primaryBaseUrl;
 let revision = 0;

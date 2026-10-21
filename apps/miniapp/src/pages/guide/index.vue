@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import DemoModeBanner from '@/components/DemoModeBanner.vue';
 import { computed, ref } from 'vue';
+import { onShareAppMessage } from '@dcloudio/uni-app';
+import { isShowcase } from '@/services/showcase';
 import { go, goHome, storedSession } from '@/services/api';
 import { dismissGuide, guideSteps } from '@/services/onboarding';
 import GfIcon from '@/components/GfIcon.vue';
@@ -9,6 +11,7 @@ const step = computed(() => guideSteps[index.value]!);
 function leave() {
   dismissGuide();
   if (getCurrentPages().length > 1) uni.navigateBack({ delta: 1 });
+  else if (isShowcase) uni.reLaunch({ url: '/pages/demo/index' });
   else if (storedSession()) goHome();
   else uni.reLaunch({ url: '/pages/login/index' });
 }
@@ -21,12 +24,20 @@ function next() {
 }
 function preview() {
   dismissGuide();
+  if (isShowcase) {
+    const pages = getCurrentPages();
+    if (pages.length > 1 && pages[pages.length - 2]?.route === 'pages/demo/index')
+      uni.navigateBack({ delta: 1 });
+    else uni.redirectTo({ url: '/pages/demo/index' });
+    return;
+  }
   go('/pages/demo/index');
 }
+onShareAppMessage(() => ({ title: 'GatherFlow · 相聚有商量', path: '/pages/demo/index' }));
 </script>
 <template>
   <view class="page guide-page">
-    <DemoModeBanner id="environment-banner" />
+    <DemoModeBanner v-if="!isShowcase" id="environment-banner" />
     <view class="row between"
       ><text class="eyebrow">GATHERFLOW · 新手指南</text
       ><button id="guide-skip" class="skip" @tap="leave">稍后再看</button></view
@@ -70,7 +81,13 @@ function preview() {
         ><button v-if="index > 0" id="guide-previous" class="btn outline previous" @tap="index--">
           上一步</button
         ><button id="guide-next" class="btn grow" @tap="next">
-          {{ index === guideSteps.length - 1 ? '我知道了，开始使用' : '下一步' }}
+          {{
+            index === guideSteps.length - 1
+              ? isShowcase
+                ? '返回五人档案'
+                : '我知道了，开始使用'
+              : '下一步'
+          }}
         </button></view
       ><button id="guide-demo" class="btn text-btn" @tap="preview">
         先看看原来的五人演示 ›
