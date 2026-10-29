@@ -36,6 +36,7 @@
     "wechat:login-test": "tsx scripts/wechat-login-smoke.ts",
     "wechat:guide-test": "tsx scripts/wechat-onboarding.ts",
     "wechat:showcase-test": "tsx scripts/wechat-showcase.ts",
+    "wechat:m6-test": "tsx scripts/wechat-m6.ts",
     "build:api": "npm run build -w @gatherflow/api",
     "build:mp-weixin": "npm run build:mp-weixin -w @gatherflow/miniapp",
     "build:h5": "npm run build:h5 -w @gatherflow/miniapp",

@@ -15,6 +15,7 @@ const selectedProposal = ref(''),
   linkedIds = ref<string[]>([]),
   uploaded = ref<Evidence[]>([]),
   savedExpenseId = ref('');
+const expenseForm = ref<InstanceType<typeof ExpenseForm> | null>(null);
 const { id, options, userId, data, loading, error, reload, busy, run } = useActivityPage(
   'evidence',
   async (activityId) => {
@@ -90,9 +91,12 @@ async function markBooked() {
     uni.showToast({ title: '已登记预订', icon: 'success' });
   });
 }
-async function saveExpense(input: ExpenseInput) {
+async function saveExpense(input: ExpenseInput, requestKey?: string) {
   await run(async () => {
-    const expense = await api<Expense>(`/activities/${id.value}/expenses`, 'POST', input);
+    const expense = await api<Expense>(`/activities/${id.value}/expenses`, 'POST', input, {
+      idempotencyKey: requestKey,
+    });
+    expenseForm.value?.clearDraft();
     savedExpenseId.value = expense.id;
     recordExpense.value = false;
     uni.showToast({ title: '账单已保存', icon: 'success' });
@@ -231,12 +235,16 @@ async function refreshContext() {
                 </button></view
               ></view
             ><ExpenseForm
+              id="expense-form"
+              ref="expenseForm"
+              :draft-key="'expense-inline:' + id + ':' + task.id"
               class="space-top"
               :members="data.workspace.members"
               :user-id="userId"
               :task-id="task.id"
               :evidence-ids="linkedIds"
               :busy="busy"
+              @restore-links="linkedIds = $event.evidenceIds"
               @save="saveExpense" /></template></template
         ><view v-if="savedExpenseId" class="notice space-top"
           >账单已保存，等待相关分摊成员确认。<button

@@ -10,6 +10,9 @@ import {
 } from '@gatherflow/shared';
 import { api, errorMessage, requireSession } from '@/services/api';
 import GfIcon from '@/components/GfIcon.vue';
+import DraftStatus from '@/components/DraftStatus.vue';
+import { useFormDraft } from '@/composables/useFormDraft';
+import { activityDraftSchema } from '@/services/form-drafts';
 
 const name = ref('');
 const description = ref('');
@@ -17,7 +20,19 @@ const type = ref<ActivityType>();
 const busy = ref(false);
 const error = ref('');
 const types = Object.entries(activityTypeLabels) as [ActivityType, string][];
-onShow(() => requireSession('/pages/create/index'));
+const draft = useFormDraft(
+  activityDraftSchema,
+  () => ({ name: name.value, description: description.value, type: type.value ?? null }),
+  (value) => {
+    name.value = value.name;
+    description.value = value.description;
+    type.value = value.type ?? undefined;
+  },
+);
+onShow(() => {
+  if (requireSession('/pages/create/index'))
+    draft.open('activity:create', 'new', { name: '', description: '', type: null });
+});
 async function submit() {
   if (busy.value) return;
   error.value = '';
@@ -32,7 +47,10 @@ async function submit() {
   }
   busy.value = true;
   try {
-    const activity = await api<ActivityDetail>('/activities', 'POST', parsed.data);
+    const activity = await api<ActivityDetail>('/activities', 'POST', parsed.data, {
+      idempotencyKey: draft.submissionKey(parsed.data),
+    });
+    draft.clear();
     uni.redirectTo({ url: `/pages/activity/index?id=${activity.id}` });
   } catch (cause) {
     error.value = errorMessage(cause);
@@ -49,6 +67,7 @@ async function submit() {
       ><text class="title">相聚，先有个念头。</text
       ><text class="muted">先起个名字。时间和地点，留给大家商量。</text></view
     >
+    <DraftStatus :status="draft.status.value" :busy="busy" @discard="draft.discard" />
     <view class="field"
       ><text class="label">活动叫什么？</text
       ><input

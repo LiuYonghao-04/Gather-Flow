@@ -89,9 +89,19 @@ export class ApiError extends Error {
     super(message);
   }
 }
-export function api<T>(path: string, method: 'GET' | 'POST' = 'GET', data?: object): Promise<T> {
+export function api<T>(
+  path: string,
+  method: 'GET' | 'POST' = 'GET',
+  data?: object,
+  options?: { idempotencyKey?: string },
+): Promise<T> {
   const context = requestContext();
   const session = storedSession(context);
+  const identityToken = () => {
+    const value = cachedSession(context);
+    return value && typeof value === 'object' && 'token' in value ? value.token : undefined;
+  };
+  const requestIdentity = identityToken();
   return new Promise((resolve, reject) => {
     uni.request({
       url: `${context.baseUrl}${path}`,
@@ -100,12 +110,13 @@ export function api<T>(path: string, method: 'GET' | 'POST' = 'GET', data?: obje
       timeout: 12000,
       header: {
         'Content-Type': 'application/json',
+        ...(options?.idempotencyKey ? { 'Idempotency-Key': options.idempotencyKey } : {}),
         ...(session ? { Authorization: `Bearer ${session.token}` } : {}),
       },
       success(response) {
         if (response.statusCode >= 200 && response.statusCode < 300) {
-          if (!isCurrentContext(context)) {
-            reject(new ApiError('CONTEXT_CHANGED', '空间已切换，请在当前页面继续'));
+          if (!isCurrentContext(context) || identityToken() !== requestIdentity) {
+            reject(new ApiError('CONTEXT_CHANGED', '登录身份或空间已变化，请在当前页面继续'));
             return;
           }
           resolve(response.data as T);

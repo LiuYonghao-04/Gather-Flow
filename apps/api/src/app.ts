@@ -9,6 +9,8 @@ import {
   demoLoginSchema,
   inviteTokenSchema,
   reviewSchema,
+  profileSchema,
+  type User,
 } from '@gatherflow/shared';
 import type { Db } from './db/database';
 import type { Settings } from './config';
@@ -20,6 +22,7 @@ import { collaborationRoutes } from './collaboration-routes';
 import { settlementRoutes } from './settlement-routes';
 import { MulterError } from 'multer';
 import { WechatAuthService } from './wechat-auth';
+import { IdempotencyService } from './services/idempotency';
 
 export function createApp(
   db: Db,
@@ -29,6 +32,7 @@ export function createApp(
   const app = express();
   const activities = new ActivityService(db);
   const invites = new InviteService(db);
+  const idempotency = new IdempotencyService(db);
   const wechat = new WechatAuthService(db, settings, dependencies.wechatFetch);
   const loginAttempts = new Map<string, { count: number; until: number }>();
   app.disable('x-powered-by');
@@ -94,11 +98,44 @@ export function createApp(
   });
   const actor = (locals: Record<string, unknown>): string => z.string().parse(locals.userId);
   const param = (value: unknown): string => z.string().min(1).max(128).parse(value);
+  const profile = (userId: string): User => {
+    const user = db.prepare('SELECT id,name,color,tagline FROM users WHERE id=?').get(userId) as
+      | User
+      | undefined;
+    ensure(user, 401, 'SESSION_EXPIRED', '请重新登录');
+    return user;
+  };
+  app.get('/me', (_req, res) =>
+    res.set('Cache-Control', 'private, no-store').json(profile(actor(res.locals))),
+  );
+  app.post('/me/profile', (req, res) => {
+    ensure(
+      settings.mode === 'wechat',
+      403,
+      'DEMO_PROFILE_READ_ONLY',
+      '演示身份的名字保持不变，请返回微信身份修改昵称',
+    );
+    const { name } = profileSchema.parse(req.body);
+    db.prepare("UPDATE users SET name=? WHERE id=? AND auth_kind='wechat'").run(
+      name,
+      actor(res.locals),
+    );
+    res.set('Cache-Control', 'private, no-store').json(profile(actor(res.locals)));
+  });
   app.get('/activities', (_req, res) => res.json(activities.list(actor(res.locals))));
   app.post('/activities', (req, res) => {
+    const input = createActivitySchema.parse(req.body);
     res
       .status(201)
-      .json(activities.create(actor(res.locals), createActivitySchema.parse(req.body)));
+      .json(
+        idempotency.run(
+          actor(res.locals),
+          'POST:/activities',
+          req.get('Idempotency-Key'),
+          input,
+          () => activities.create(actor(res.locals), input),
+        ),
+      );
   });
   app.get('/activities/:id', (req, res) =>
     res.json(activities.detail(param(req.params.id), actor(res.locals))),

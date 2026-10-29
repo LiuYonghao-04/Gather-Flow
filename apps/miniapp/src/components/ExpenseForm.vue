@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
   parseMoney,
   formatMoney,
   splitEqually,
   expenseInputSchema,
+  canonicalJson,
   type User,
   type ExpenseInput,
 } from '@gatherflow/shared';
 import { showError } from '@/services/api';
 import MemberPicker from './MemberPicker.vue';
+import DraftStatus from './DraftStatus.vue';
+import { useFormDraft } from '@/composables/useFormDraft';
+import { expenseDraftSchema } from '@/services/form-drafts';
 const props = defineProps<{
   members: User[];
   userId: string;
@@ -18,8 +22,13 @@ const props = defineProps<{
   evidenceIds?: string[];
   busy?: boolean;
   submitLabel?: string;
+  draftKey?: string;
+  expectedRevision?: number;
 }>();
-const emit = defineEmits<{ save: [input: ExpenseInput] }>();
+const emit = defineEmits<{
+  save: [input: ExpenseInput, requestKey?: string];
+  restoreLinks: [links: { taskId: string | null; evidenceIds: string[] }];
+}>();
 const description = ref(props.initial?.description ?? '');
 const total = ref(props.initial ? formatMoney(props.initial.totalCents) : '');
 const payer = ref(props.initial?.payerId ?? props.userId);
@@ -32,6 +41,75 @@ const custom = ref<Record<string, string>>(
 );
 const date = ref(props.initial?.date ?? localDate());
 const category = ref<ExpenseInput['category']>(props.initial?.category ?? 'OTHER');
+const linkedTask = ref(props.taskId !== undefined ? props.taskId : (props.initial?.taskId ?? null));
+const linkedEvidence = ref([...(props.evidenceIds ?? props.initial?.evidenceIds ?? [])]);
+const currentTask = () => linkedTask.value;
+const currentEvidence = () => linkedEvidence.value;
+watch(
+  () => [props.taskId, props.evidenceIds],
+  () => {
+    const task = props.taskId !== undefined ? props.taskId : (props.initial?.taskId ?? null);
+    const evidence = props.evidenceIds ?? props.initial?.evidenceIds ?? [];
+    if (linkedTask.value !== task) linkedTask.value = task;
+    if (canonicalJson(linkedEvidence.value) !== canonicalJson(evidence))
+      linkedEvidence.value = [...evidence];
+  },
+  { deep: true, flush: 'post' },
+);
+const draft = useFormDraft(
+  expenseDraftSchema,
+  () => ({
+    description: description.value,
+    total: total.value,
+    payer: payer.value,
+    selected: selected.value,
+    mode: mode.value,
+    custom: custom.value,
+    date: date.value,
+    category: category.value,
+    taskId: currentTask(),
+    evidenceIds: currentEvidence(),
+  }),
+  (value) => {
+    description.value = value.description;
+    total.value = value.total;
+    payer.value = value.payer;
+    selected.value = value.selected;
+    mode.value = value.mode;
+    custom.value = value.custom;
+    date.value = value.date;
+    category.value = value.category;
+    linkedTask.value = value.taskId;
+    linkedEvidence.value = [...value.evidenceIds];
+    if (
+      value.taskId !== props.taskId ||
+      canonicalJson(value.evidenceIds) !== canonicalJson(props.evidenceIds ?? [])
+    )
+      emit('restoreLinks', { taskId: value.taskId, evidenceIds: value.evidenceIds });
+  },
+);
+watch(
+  () => props.draftKey,
+  (key) => {
+    if (key)
+      draft.open(key, String(props.expectedRevision ?? 'new'), {
+        description: props.initial?.description ?? '',
+        total: props.initial ? formatMoney(props.initial.totalCents) : '',
+        payer: props.initial?.payerId ?? props.userId,
+        selected: props.initial?.shares.map((x) => x.userId) ?? props.members.map((x) => x.id),
+        mode: props.initial?.splitMode ?? 'EQUAL',
+        custom: Object.fromEntries(
+          props.initial?.shares.map((x) => [x.userId, formatMoney(x.amountCents)]) ?? [],
+        ),
+        date: props.initial?.date ?? localDate(),
+        category: props.initial?.category ?? 'OTHER',
+        taskId: currentTask(),
+        evidenceIds: currentEvidence(),
+      });
+  },
+  { immediate: true },
+);
+defineExpose({ clearDraft: draft.clear });
 const kinds: { key: ExpenseInput['category']; label: string }[] = [
   { key: 'TRANSPORT', label: '交通' },
   { key: 'STAY', label: '住宿' },
@@ -90,10 +168,13 @@ function save() {
               userId,
               amountCents: parseMoney(custom.value[userId] || '0'),
             })),
-      taskId: props.initial?.taskId ?? props.taskId ?? null,
-      evidenceIds: props.evidenceIds ?? props.initial?.evidenceIds ?? [],
+      taskId: currentTask(),
+      evidenceIds: currentEvidence(),
     });
-    emit('save', input);
+    const payload = props.expectedRevision
+      ? { expectedRevision: props.expectedRevision, input }
+      : input;
+    emit('save', input, props.draftKey ? draft.submissionKey(payload) : undefined);
   } catch (error) {
     showError(
       error instanceof Error && 'issues' in error
@@ -105,9 +186,11 @@ function save() {
 </script>
 <template>
   <view class="form-stack"
-    ><view class="field"
+    ><DraftStatus :status="draft.status.value" :busy="busy" @discard="draft.discard" /><view
+      class="field"
       ><text class="label">这笔钱用在了哪里</text
       ><input
+        id="expense-description"
         v-model="description"
         class="input"
         maxlength="120"
@@ -116,6 +199,7 @@ function save() {
     ><view class="field"
       ><text class="label">总金额（元）</text
       ><input
+        id="expense-total"
         v-model="total"
         class="input money-input"
         type="digit"
@@ -199,7 +283,7 @@ function save() {
       }}</text></view
     ><view class="notice"
       >账单需要由你以外的一位相关分摊成员确认。有异议的账单会暂停计入预计结算。</view
-    ><button class="btn" :loading="busy" :disabled="busy" @tap="save">
+    ><button id="expense-save" class="btn" :loading="busy" :disabled="busy" @tap="save">
       {{ submitLabel || '保存账单' }}
     </button></view
   >

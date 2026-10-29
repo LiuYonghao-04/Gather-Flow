@@ -16,6 +16,9 @@ import { useActivityPage } from '@/composables/useActivityPage';
 import MemberPicker from '@/components/MemberPicker.vue';
 import GfState from '@/components/GfState.vue';
 import ActivityTrail from '@/components/ActivityTrail.vue';
+import DraftStatus from '@/components/DraftStatus.vue';
+import { useFormDraft } from '@/composables/useFormDraft';
+import { proposalDraftSchema } from '@/services/form-drafts';
 const title = ref(''),
   description = ref(''),
   location = ref(''),
@@ -27,6 +30,35 @@ const category = ref<ProposalContent['category']>('ACTIVITY');
 const needsBooking = ref(false);
 const selected = ref<string[]>([]);
 const taskId = ref('');
+const draft = useFormDraft(
+  proposalDraftSchema,
+  () => ({
+    title: title.value,
+    description: description.value,
+    location: location.value,
+    date: date.value,
+    start: start.value,
+    end: end.value,
+    budget: budget.value,
+    category: category.value,
+    needsBooking: needsBooking.value,
+    selected: selected.value,
+    taskId: taskId.value,
+  }),
+  (value) => {
+    title.value = value.title;
+    description.value = value.description;
+    location.value = value.location;
+    date.value = value.date;
+    start.value = value.start;
+    end.value = value.end;
+    budget.value = value.budget;
+    category.value = value.category;
+    needsBooking.value = value.needsBooking;
+    selected.value = value.selected;
+    taskId.value = value.taskId;
+  },
+);
 const { id, options, data, loading, error, reload, busy, run } = useActivityPage(
   'proposal-edit',
   async (activityId, q) => {
@@ -42,17 +74,23 @@ watch(data, (value) => {
   if (!value) return;
   const p = value.proposal;
   const c = p?.content;
-  title.value = c?.title ?? '';
-  description.value = c?.description ?? '';
-  location.value = c?.location ?? '';
-  date.value = c?.date ?? '';
-  start.value = c?.startTime ?? '';
-  end.value = c?.endTime ?? '';
-  budget.value = c?.budgetCents != null ? formatMoney(c.budgetCents) : '';
-  category.value = c?.category ?? 'ACTIVITY';
-  needsBooking.value = c?.needsBooking ?? false;
-  selected.value = p?.participants.map((x) => x.id) ?? value.workspace.members.map((x) => x.id);
-  taskId.value = p?.taskId ?? options.value.taskId ?? '';
+  draft.open(
+    `proposal:${id.value}:${p?.id ?? 'new:' + (options.value.taskId ?? '')}`,
+    String(p?.version ?? 'new'),
+    {
+      title: c?.title ?? '',
+      description: c?.description ?? '',
+      location: c?.location ?? '',
+      date: c?.date ?? '',
+      start: c?.startTime ?? '',
+      end: c?.endTime ?? '',
+      budget: c?.budgetCents != null ? formatMoney(c.budgetCents) : '',
+      category: c?.category ?? 'ACTIVITY',
+      needsBooking: c?.needsBooking ?? false,
+      selected: p?.participants.map((x) => x.id) ?? value.workspace.members.map((x) => x.id),
+      taskId: p?.taskId ?? options.value.taskId ?? '',
+    },
+  );
 });
 async function save() {
   await run(async () => {
@@ -77,18 +115,28 @@ async function save() {
         ))
       )
         return;
+      const input = {
+        expectedVersion: data.value.proposal.version,
+        content,
+        taskId: taskId.value || null,
+      };
       p = await api<Proposal>(
         `/activities/${id.value}/proposals/${data.value.proposal.id}/revisions`,
         'POST',
-        { expectedVersion: data.value.proposal.version, content, taskId: taskId.value || null },
+        input,
+        { idempotencyKey: draft.submissionKey(input) },
       );
     } else {
-      p = await api<Proposal>(`/activities/${id.value}/proposals`, 'POST', {
+      const input = {
         content,
         participantIds: selected.value,
         taskId: taskId.value || null,
+      };
+      p = await api<Proposal>(`/activities/${id.value}/proposals`, 'POST', input, {
+        idempotencyKey: draft.submissionKey(input),
       });
     }
+    draft.clear();
     uni.redirectTo({ url: `/pages/proposal/index?id=${id.value}&proposalId=${p.id}` });
   });
 }
@@ -112,10 +160,12 @@ async function save() {
       ><view v-if="data.workspace.status === 'ARCHIVED'" class="notice"
         >活动已归档，不能新增或修改方案。</view
       ><template v-else
-        ><view class="field"
+        ><DraftStatus :status="draft.status.value" :busy="busy" @discard="draft.discard" /><view
+          class="field"
           ><text class="label">方案名称</text
           ><input
             v-model="title"
+            id="proposal-title"
             class="input"
             maxlength="80"
             placeholder="例如：周六去山里走走" /></view
@@ -222,6 +272,7 @@ async function save() {
             >发布后保留这组参与者。更换参与范围请另提新方案；退出由本人或房主明确记录。</text
           ></view
         ><button
+          id="proposal-save"
           class="btn"
           :disabled="busy || !title.trim() || !selected.length"
           :loading="busy"

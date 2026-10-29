@@ -172,8 +172,8 @@ export class WechatDriver {
     await bounded(this.mini.native().confirmModal(), 'native confirmation');
   }
 
-  async fill(selector: string, marker: string, wxml: string, value: string) {
-    await this.waitNode(selector);
+  async fill(selector: string, marker: string, wxml: string, value: string, component = '') {
+    await this.waitNode(selector, component);
     const source = await readFile(resolve(wechatProject, wxml + '.wxml'), 'utf8');
     const tags = [...source.matchAll(/<(?:input|textarea)\b[^>]*>/g)]
       .map((match) => match[0])
@@ -183,15 +183,18 @@ export class WechatDriver {
     assert.ok(key, `Input binding missing for ${marker}`);
     await bounded(
       this.mini.evaluate(
-        `(key, value) => {
+        `(key, value, component) => {
       const page = getCurrentPages().slice(-1)[0];
-      const handler = page.data[key];
-      if (typeof page[handler] !== 'function') throw new Error('Rendered input handler missing');
-      page[handler]({type: 'input', detail: {value}, target: {dataset: {}}, currentTarget: {dataset: {}}, timeStamp: Date.now()});
+      const scope=component?page.selectComponent(component):page;
+      if(!scope)throw new Error('Input component missing');
+      const handler = scope.data[key];
+      if (typeof scope[handler] !== 'function') throw new Error('Rendered input handler missing');
+      scope[handler]({type: 'input', detail: {value}, target: {dataset: {}}, currentTarget: {dataset: {}}, timeStamp: Date.now()});
       return true;
     }`,
         key,
         value,
+        component,
       ),
       'input event',
     );

@@ -79,6 +79,23 @@ it('keeps WeChat and demo sessions, URLs and tokens separate through a round tri
   demo.enterDemoWorkspace();
   expect(api.storedSession()?.token).toBe(demoSession.token);
 });
+it('rejects a late successful mutation after switching identity inside the same workspace', async () => {
+  const { api } = await modules();
+  const pending = api.api(
+    '/activities',
+    'POST',
+    { name: '旧身份的提交' },
+    { idempotencyKey: 'm6_same_workspace_retry' },
+  );
+  api.persistSession({
+    ...wxSession,
+    token: 'c'.repeat(64),
+    user: { ...wxSession.user, id: 'another-person' },
+  });
+  request.mock.calls[0]![0].success({ statusCode: 201, data: { id: 'old-activity' } });
+  await expect(pending).rejects.toMatchObject({ code: 'CONTEXT_CHANGED' });
+  expect(api.storedSession()?.user.id).toBe('another-person');
+});
 it('restores the selected environment after restart and still retains the personal identity', async () => {
   const first = await modules();
   first.api.storedSession();

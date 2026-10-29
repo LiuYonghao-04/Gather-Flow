@@ -22,10 +22,12 @@ import {
 import type { Db } from './db/database';
 import { ExpenseService } from './services/expenses';
 import { evidenceInputSchema } from './services/evidence';
+import { IdempotencyService } from './services/idempotency';
 
 export function collaborationRoutes(db: Db) {
   const router = Router({ mergeParams: true });
   const service = new ExpenseService(db);
+  const idempotency = new IdempotencyService(db);
   const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 4, fieldSize: 2000, parts: 5 },
@@ -134,17 +136,20 @@ export function collaborationRoutes(db: Db) {
       ),
     );
   });
-  router.post('/proposals', (req, res) =>
+  router.post('/proposals', (req, res) => {
+    const input = proposalCreateSchema.parse(req.body);
     res
       .status(201)
       .json(
-        service.createProposal(
-          id(res.locals.activityId),
+        idempotency.run(
           id(res.locals.userId),
-          proposalCreateSchema.parse(req.body),
+          'POST:' + req.baseUrl + req.path,
+          req.get('Idempotency-Key'),
+          input,
+          () => service.createProposal(id(res.locals.activityId), id(res.locals.userId), input),
         ),
-      ),
-  );
+      );
+  });
   router.get('/proposals/:proposalId', (req, res) =>
     res.json(
       service.proposal(id(res.locals.activityId), id(req.params.proposalId), id(res.locals.userId)),
@@ -153,13 +158,20 @@ export function collaborationRoutes(db: Db) {
   router.post('/proposals/:proposalId/revisions', (req, res) => {
     const input = proposalReviseSchema.parse(req.body);
     res.json(
-      service.reviseProposal(
-        id(res.locals.activityId),
-        id(req.params.proposalId),
+      idempotency.run(
         id(res.locals.userId),
-        input.expectedVersion,
-        input.content,
-        input.taskId,
+        'POST:' + req.baseUrl + req.path,
+        req.get('Idempotency-Key'),
+        input,
+        () =>
+          service.reviseProposal(
+            id(res.locals.activityId),
+            id(req.params.proposalId),
+            id(res.locals.userId),
+            input.expectedVersion,
+            input.content,
+            input.taskId,
+          ),
       ),
     );
   });
@@ -250,17 +262,20 @@ export function collaborationRoutes(db: Db) {
   router.get('/finance', (req, res) =>
     res.json(service.finance(id(res.locals.activityId), id(res.locals.userId))),
   );
-  router.post('/expenses', (req, res) =>
+  router.post('/expenses', (req, res) => {
+    const input = expenseInputSchema.parse(req.body);
     res
       .status(201)
       .json(
-        service.createExpense(
-          id(res.locals.activityId),
+        idempotency.run(
           id(res.locals.userId),
-          expenseInputSchema.parse(req.body),
+          'POST:' + req.baseUrl + req.path,
+          req.get('Idempotency-Key'),
+          input,
+          () => service.createExpense(id(res.locals.activityId), id(res.locals.userId), input),
         ),
-      ),
-  );
+      );
+  });
   router.get('/expenses/:expenseId', (req, res) =>
     res.json(
       service.expense(id(res.locals.activityId), id(req.params.expenseId), id(res.locals.userId)),
@@ -269,12 +284,19 @@ export function collaborationRoutes(db: Db) {
   router.post('/expenses/:expenseId/revisions', (req, res) => {
     const input = expenseReviseSchema.parse(req.body);
     res.json(
-      service.reviseExpense(
-        id(res.locals.activityId),
-        id(req.params.expenseId),
+      idempotency.run(
         id(res.locals.userId),
-        input.expectedRevision,
-        input.input,
+        'POST:' + req.baseUrl + req.path,
+        req.get('Idempotency-Key'),
+        input,
+        () =>
+          service.reviseExpense(
+            id(res.locals.activityId),
+            id(req.params.expenseId),
+            id(res.locals.userId),
+            input.expectedRevision,
+            input.input,
+          ),
       ),
     );
   });

@@ -9,6 +9,7 @@ import GfState from '@/components/GfState.vue';
 import ActivityTrail from '@/components/ActivityTrail.vue';
 const taskId = ref(''),
   evidenceIds = ref<string[]>([]);
+const form = ref<InstanceType<typeof ExpenseForm> | null>(null);
 const { id, options, userId, data, loading, error, reload, busy, run } = useActivityPage(
   'expense-edit',
   async (activityId, q) => {
@@ -38,7 +39,7 @@ function toggleEvidence(value: string) {
     ? evidenceIds.value.filter((x) => x !== value)
     : [...evidenceIds.value, value];
 }
-async function save(input: ExpenseInput) {
+async function save(input: ExpenseInput, requestKey?: string) {
   await run(async () => {
     if (!data.value) return;
     let expense: Expense;
@@ -57,13 +58,20 @@ async function save(input: ExpenseInput) {
           expectedRevision: data.value.expense.revision,
           input: { ...input, taskId: taskId.value || null },
         },
+        { idempotencyKey: requestKey },
       );
     } else {
-      expense = await api<Expense>(`/activities/${id.value}/expenses`, 'POST', {
-        ...input,
-        taskId: taskId.value || null,
-      });
+      expense = await api<Expense>(
+        `/activities/${id.value}/expenses`,
+        'POST',
+        {
+          ...input,
+          taskId: taskId.value || null,
+        },
+        { idempotencyKey: requestKey },
+      );
     }
+    form.value?.clearDraft();
     uni.redirectTo({ url: `/pages/expense/index?id=${id.value}&expenseId=${expense.id}` });
   });
 }
@@ -134,6 +142,10 @@ async function save(input: ExpenseInput) {
             </button></view
           ></view
         ><ExpenseForm
+          id="expense-form"
+          ref="form"
+          :draft-key="'expense:' + id + ':' + (data.expense?.id ?? 'new:' + (options.taskId ?? ''))"
+          :expected-revision="data.expense?.revision"
           :members="data.workspace.members"
           :user-id="userId"
           :initial="data.expense ?? undefined"
@@ -141,6 +153,10 @@ async function save(input: ExpenseInput) {
           :evidence-ids="evidenceIds"
           :busy="busy"
           :submit-label="data.expense ? '保存新版账单' : '保存账单，等待确认'"
+          @restore-links="
+            taskId = $event.taskId ?? '';
+            evidenceIds = $event.evidenceIds;
+          "
           @save="save" /></template></template
   ></view>
 </template>

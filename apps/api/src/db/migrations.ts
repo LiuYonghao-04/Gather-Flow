@@ -75,4 +75,18 @@ export const migrations = [
     );
     `,
   },
+  {
+    version: 7,
+    sql: `
+    CREATE TABLE idempotent_requests (
+      user_id TEXT NOT NULL REFERENCES users(id),
+      scope TEXT NOT NULL,
+      request_key TEXT NOT NULL,
+      input_hash TEXT NOT NULL,
+      response_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (user_id, scope, request_key)
+    );
+    `,
+  },
 ];

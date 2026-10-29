@@ -1,4 +1,16 @@
 import { z } from 'zod';
+export { canonicalJson } from './canonical-json';
+
+export const profileSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, '请填写昵称')
+      .max(24, '昵称最多 24 个字')
+      .regex(/^[^\u0000-\u001f\u007f]+$/, '昵称不能包含换行或控制字符'),
+  })
+  .strict();
 
 export const demoUserIds = ['A', 'B', 'C', 'D', 'E'] as const;
 export const demoLoginSchema = z.object({ userId: z.enum(demoUserIds) }).strict();

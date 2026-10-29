@@ -1,14 +1,47 @@
 <script setup lang="ts">
 import DemoModeBanner from '@/components/DemoModeBanner.vue';
 import { onShow } from '@dcloudio/uni-app';
-import { go, isDemo, loginPath } from '@/services/api';
+import { ref } from 'vue';
+import { profileSchema } from '@gatherflow/shared';
+import { go, isDemo, loginPath, errorMessage } from '@/services/api';
 import { useSessionStore } from '@/stores/session';
 import GfAvatar from '@/components/GfAvatar.vue';
 import GfIcon from '@/components/GfIcon.vue';
 import GfNav from '@/components/GfNav.vue';
 import DemoEntry from '@/components/DemoEntry.vue';
 const session = useSessionStore();
-onShow(() => session.refresh());
+const editing = ref(false),
+  nickname = ref(''),
+  busy = ref(false),
+  error = ref('');
+onShow(() => {
+  session.refresh();
+  if (session.user && !isDemo.value) void session.profile().catch(() => {});
+});
+function editName() {
+  nickname.value = session.user?.name ?? '';
+  editing.value = true;
+  error.value = '';
+}
+async function saveName() {
+  if (busy.value) return;
+  const parsed = profileSchema.safeParse({ name: nickname.value });
+  if (!parsed.success) {
+    error.value = parsed.error.issues[0]?.message ?? '请检查昵称';
+    return;
+  }
+  busy.value = true;
+  error.value = '';
+  try {
+    await session.profile(parsed.data.name);
+    editing.value = false;
+    uni.showToast({ title: '昵称已更新', icon: 'success' });
+  } catch (cause) {
+    error.value = errorMessage(cause);
+  } finally {
+    busy.value = false;
+  }
+}
 </script>
 <template>
   <view class="page with-nav">
@@ -24,6 +57,35 @@ onShow(() => session.refresh());
       ></view
     >
     <view v-else class="notice">登录后，查看你发起和参与的相聚。</view>
+    <template v-if="session.user && !isDemo">
+      <view v-if="editing" class="nickname-editor">
+        <text class="label">朋友在活动中看到的昵称</text>
+        <input
+          id="profile-name"
+          v-model="nickname"
+          class="input"
+          :maxlength="24"
+          :disabled="busy"
+          placeholder="填写大家熟悉的名字"
+        />
+        <text class="helper">最多 24 个字，成员名单和账单会显示这个名字。</text>
+        <text v-if="error" class="error">{{ error }}</text>
+        <view class="row gap space-top"
+          ><button
+            id="profile-save"
+            class="btn grow"
+            :disabled="busy"
+            :loading="busy"
+            @tap="saveName"
+          >
+            保存昵称</button
+          ><button class="btn secondary" :disabled="busy" @tap="editing = false">取消</button></view
+        >
+      </view>
+      <button v-else id="profile-edit" class="identity-action" @tap="editName">
+        修改昵称<GfIcon name="arrow" />
+      </button>
+    </template>
     <button id="me-identity" class="identity-action" @tap="go(loginPath())">
       {{ session.user ? (isDemo ? '切换演示身份' : '重新微信登录') : '前往登录'
       }}<GfIcon name="arrow" />
